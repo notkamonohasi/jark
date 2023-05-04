@@ -25,9 +25,7 @@ class Logger :
 
     
     def make_result_dir(self) : 
-        os.system("rm -rf " + self.result_path) 
-        os.mkdir(self.result_path)
-        os.mkdir(self.result_path + "/vehicle")
+        os.system("mkdir -p " + self.result_path + "/vehicle")
 
     
     def write_log_vehicle(self, vehicle_number, vehicle_log_list : list[dict[str, any]]) : 

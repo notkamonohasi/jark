@@ -6,7 +6,7 @@ from lane import Lane
 from DQN.DQN import DQN
 
 class Simulator : 
-    def __init__(self, init_data : dict[str, any]) : 
+    def __init__(self, init_data : dict[str, any], dqn : DQN) : 
         self.delta_t = init_data["delta_t"]
         self.step_count = 0 
 
@@ -25,16 +25,8 @@ class Simulator :
             lane_init_data["number"] : Lane(lane_init_data) for lane_init_data in lane_init_data_list
         }
 
-        # dqnを初期化
-        self.dqn = DQN({
-            "state_columns" : init_data["state_columns"], 
-            "buffer_size" : init_data["buffer_size"], 
-            "learning_rate" : init_data["learning_rate"],
-            "target_learning_rate" : init_data["target_learning_rate"],
-            "jark_cand" : init_data["jark_cand"], 
-            "batch_size" : init_data["batch_size"], 
-            "gamma" : init_data["gamma"]
-        })
+        # dqn
+        self.dqn = dqn
 
 
     def start(self) -> None : 
@@ -80,5 +72,5 @@ class Simulator :
     
 
     def calculate_immediate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
-        return state_t1["velocity"] + state_t0["accel"] * 10
+        return state_t1["velocity"] ** 2 + state_t0["accel"] * 10
 

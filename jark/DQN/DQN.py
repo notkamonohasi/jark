@@ -1,5 +1,5 @@
 
-import torch
+import torch, random
 from torch import tensor
 import torch.nn as nn
 import torch.optim as optim
@@ -13,12 +13,13 @@ from .util import Transition, device
 
 class DQN : 
     def __init__(self, init_data : dict[str, any]) : 
-        state_dimension = len(init_data["state_columns"])
-        action_dimension = len(init_data["jark_cand"])
+        self.state_dimension = len(init_data["state_columns"])
+        self.action_dimension = len(init_data["jark_cand"])
 
+        self.max_episode = init_data["max_episode"]
         self.jark_cand = init_data["jark_cand"]
-        self.network = DQN_Network(state_dimension, action_dimension, False, 0)
-        self.target_network = DQN_Network(state_dimension, action_dimension, True, init_data["target_learning_rate"])
+        self.network = DQN_Network(self.state_dimension, self.action_dimension, False, 0)
+        self.target_network = DQN_Network(self.state_dimension, self.action_dimension, True, init_data["target_learning_rate"])
         self.state_columns = init_data["state_columns"]
         self.batch_size = init_data["batch_size"]
         self.gamma = init_data["gamma"]
@@ -28,6 +29,8 @@ class DQN :
         })
 
         self.optimizer = optim.Adam(self.network.parameters(), lr=init_data["learning_rate"], amsgrad=True)
+
+        self.pos_episode = 1
 
 
     def optimize(self) : 
@@ -61,12 +64,20 @@ class DQN :
         torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)
         self.optimizer.step()
 
-
-    def decide_action_single(self, state : dict[str, any]) -> float : 
-        state_tensor = tensor([state[col] for col in self.state_columns], dtype=torch.float32)
-        action = torch.argmax(self.network.forward(state_tensor))
-        return action.item()
+    # epsilon-greedy
+    def decide_action_single(self, state : dict[str, any]) -> int : 
+        if random.uniform(0, 1) <= self.calculate_epsilon() : 
+            return random.randint(0, 1000) % self.action_dimension
+        else : 
+            state_tensor = tensor([state[col] for col in self.state_columns], dtype=torch.float32)
+            action = torch.argmax(self.network.forward(state_tensor))
+            return action.item()
     
+
+    def calculate_epsilon(self) : 
+        return (self.max_episode - self.pos_episode) / self.max_episode
+    
+
     def push_experience(self, state : dict[str, any], action, next_state : dict[str, any], reward, is_goal) : 
         # next_stateのみ特別扱い
         if is_goal : 

@@ -1,10 +1,6 @@
 from setuptools import setup, find_packages
-import os
-from setuptools import setup
 from setuptools.command.build import build
-
 import os
-from setuptools import setup, find_packages
 
 class CustomBuild(build):
     def run(self):
@@ -16,6 +12,7 @@ setup(
     packages=find_packages(),
     cmdclass={'build': CustomBuild },
     install_requires=[
+        'torch==2.0.0',
         'matplotlib==3.4.2',
         'ipykernel==6.19.4',
         'pandas==1.5.2',

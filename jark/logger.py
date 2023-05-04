@@ -20,8 +20,8 @@ class Logger :
         self.make_result_dir()
 
         # vehicle
-        for vehicle_number, vehicle_log_arr in self.vehicle_log_dict.items() : 
-            self.write_log_vehicle(vehicle_number, vehicle_log_arr)
+        for vehicle_number, vehicle_log_list in self.vehicle_log_dict.items() : 
+            self.write_log_vehicle(vehicle_number, vehicle_log_list)
 
     
     def make_result_dir(self) : 
@@ -30,13 +30,13 @@ class Logger :
         os.mkdir(self.result_path + "/vehicle")
 
     
-    def write_log_vehicle(self, vehicle_number, vehicle_log_arr : list[dict[str, any]]) : 
-        if len(vehicle_log_arr) == 0 : 
+    def write_log_vehicle(self, vehicle_number, vehicle_log_list : list[dict[str, any]]) : 
+        if len(vehicle_log_list) == 0 : 
             return 
         
-        columns = vehicle_log_arr[0].keys()
+        columns = vehicle_log_list[0].keys()
         data_dict = {
-            col : [vehicle_log_arr[i][col] for i in range(len(vehicle_log_arr))] for col in columns
+            col : [vehicle_log_list[i][col] for i in range(len(vehicle_log_list))] for col in columns
         }
         df = pd.DataFrame(data_dict)
         df.to_csv(self.result_path + "/vehicle" + "/number_" + str(vehicle_number) + ".csv")

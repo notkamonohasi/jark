@@ -1,0 +1,93 @@
+
+import torch
+from torch import tensor
+import torch.nn as nn
+import torch.optim as optim
+import pandas as pd 
+import numpy as np 
+from typing import Tuple
+
+from .network import DQN_Network
+from .memory import Memory
+from .util import Transition, device
+
+class DQN : 
+    def __init__(self, init_data : dict[str, any]) : 
+        state_dimension = len(init_data["state_columns"])
+        action_dimension = len(init_data["jark_cand"])
+
+        self.jark_cand = init_data["jark_cand"]
+        self.network = DQN_Network(state_dimension, action_dimension, False, 0)
+        self.target_network = DQN_Network(state_dimension, action_dimension, True, init_data["target_learning_rate"])
+        self.state_columns = init_data["state_columns"]
+        self.batch_size = init_data["batch_size"]
+        self.gamma = init_data["gamma"]
+
+        self.memory = Memory({
+            "buffer_size" : init_data["buffer_size"]
+        })
+
+        self.optimizer = optim.Adam(self.network.parameters(), lr=init_data["learning_rate"], amsgrad=True)
+
+
+    def optimize(self) : 
+        if self.batch_size >= len(self.memory) : 
+            return 
+         
+        transitions = self.memory.sample(self.batch_size)
+        batch = Transition(*zip(*transitions))
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, 
+                                                batch.next_state)), device=device, dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+
+        state_action_values = self.network.forward(state_batch).gather(1, action_batch)
+
+        next_state_values = torch.zeros(self.batch_size, device=device)
+        with torch.no_grad():
+            next_state_values[non_final_mask] = self.target_network.forward(non_final_next_states).max(1)[0]
+        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
+
+        # Compute Huber loss
+        criterion = nn.SmoothL1Loss()
+        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+
+        # Optimize the model
+        self.optimizer.zero_grad()
+        loss.backward()
+        # In-place gradient clipping
+        torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)
+        self.optimizer.step()
+
+
+    def decide_action_single(self, state : dict[str, any]) -> float : 
+        state_tensor = tensor([state[col] for col in self.state_columns], dtype=torch.float32)
+        action = torch.argmax(self.network.forward(state_tensor))
+        return action.item()
+    
+    def push_experience(self, state : dict[str, any], action, next_state : dict[str, any], reward, is_goal) : 
+        # next_stateのみ特別扱い
+        if is_goal : 
+            next_state = None 
+        else : 
+            next_state = tensor([[next_state[col] for col in self.state_columns]], device=device)
+        
+        self.memory.push(
+            tensor([[state[col] for col in self.state_columns]], device=device), 
+            tensor([[action]], device=device), 
+            next_state, 
+            tensor([reward], device=device)
+        )
+
+    def separate_data(self, data : pd.DataFrame) -> Tuple[np.array, np.array, np.array, np.array, list[bool]] : 
+        prev_np = data[[col for col in self.state_columns]].to_numpy(dtype=np.float32)
+        next_np = data[["next_" + col for col in self.state_columns]].to_numpy(dtype=np.float32)
+        action_np = data["action"].to_numpy()
+        immediate_reward_np = data["immediate_reward"].to_numpy()
+        is_goal_list = data["next_is_goal"].to_list()
+        return prev_np, next_np, action_np, immediate_reward_np, is_goal_list
+    
+
+

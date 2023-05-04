@@ -21,7 +21,10 @@ class Vehicle :
         self.lane_place = init_data["lane_place"]
 
         # 経路
-        self.route_arr : list[int] = init_data["route_arr"]
+        self.route_list : list[int] = init_data["route_list"]
+
+        # jark
+        self.jark_cand : list[int] = init_data["jark_cand"]
         
         self.simulator : Simulator = simulator
 
@@ -29,9 +32,19 @@ class Vehicle :
         self.route_index = 0
 
     
+    # 現在の状態を認識
+    def recognize(self) -> None : 
+        self.state = {
+            "accel" : self.accel, 
+            "velocity" : self.velocity,
+            "is_goal" : self.is_goal
+        }
+
+    
     # jark決定
     def decide_action(self) -> None : 
-        self.jark = 0.2
+        self.action = self.simulator.dqn.decide_action_single(self.state)
+        self.jark = self.jark_cand[self.action]
 
     
     def update(self) -> None : 
@@ -61,13 +74,21 @@ class Vehicle :
             self.lane_place = self.lane_place + travel 
         else : 
             self.route_index += 1 
-            if self.route_index == len(self.route_arr) : 
+            if self.route_index == len(self.route_list) : 
                 self.is_goal = True
                 self.lane_number = -1 
                 self.lane_place = 0 
             else : 
-                self.lane_number = self.route_arr[self.route_index]
+                self.lane_number = self.route_list[self.route_index]
                 self.lane_place = self.lane_place + travel - pos_lane_length
+
+
+    def push_experience(self) : 
+        state = {key : val for key, val in self.state.items()}   # deepcopy
+        self.recognize()
+        next_state = self.state
+        reward = self.simulator.calculate_immediate_reward(state, next_state)
+        self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
 
 
     def make_log(self) -> dict[str, any] : 

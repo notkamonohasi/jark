@@ -3,6 +3,7 @@
 from logger import Logger
 from vehicle import Vehicle
 from lane import Lane
+from DQN.DQN import DQN
 
 class Simulator : 
     def __init__(self, init_data : dict[str, any]) : 
@@ -13,16 +14,27 @@ class Simulator :
         self.logger = Logger(init_data["result_path"])
 
         # vehicleを初期化
-        vehicle_init_data_arr : list[dict[str, any]] = init_data["vehicle_init_data_arr"]
+        vehicle_init_data_list : list[dict[str, any]] = init_data["vehicle_init_data_list"]
         self.vehicle_dict : dict[int, Vehicle] = {
-            vehicle_init_data["number"] : Vehicle(vehicle_init_data, self) for vehicle_init_data in vehicle_init_data_arr
+            vehicle_init_data["number"] : Vehicle(vehicle_init_data, self) for vehicle_init_data in vehicle_init_data_list
         }
 
         # laneを初期化
-        lane_init_data_arr : list[dict[str, any]] = init_data["lane_init_data_arr"]
+        lane_init_data_list : list[dict[str, any]] = init_data["lane_init_data_list"]
         self.lane_dict : dict[int, Lane] = {
-            lane_init_data["number"] : Lane(lane_init_data) for lane_init_data in lane_init_data_arr
+            lane_init_data["number"] : Lane(lane_init_data) for lane_init_data in lane_init_data_list
         }
+
+        # dqnを初期化
+        self.dqn = DQN({
+            "state_columns" : init_data["state_columns"], 
+            "buffer_size" : init_data["buffer_size"], 
+            "learning_rate" : init_data["learning_rate"],
+            "target_learning_rate" : init_data["target_learning_rate"],
+            "jark_cand" : init_data["jark_cand"], 
+            "batch_size" : init_data["batch_size"], 
+            "gamma" : init_data["gamma"]
+        })
 
 
     def start(self) -> None : 
@@ -32,6 +44,10 @@ class Simulator :
 
 
     def increment(self) -> None : 
+        # 各vehicleが状況認識（内部の状態は変化しない）
+        for vehicle in self.vehicle_dict.values() : 
+            vehicle.recognize() 
+
         # 各vehicleが意思決定（更新はまだしない）
         for vehicle in self.vehicle_dict.values() : 
             vehicle.decide_action() 
@@ -42,6 +58,13 @@ class Simulator :
         # 各vehicleを更新する
         for vehicle in self.vehicle_dict.values() : 
             vehicle.update() 
+
+        # 各vehicleが経験を格納
+        for vehicle in self.vehicle_dict.values() : 
+            vehicle.push_experience()
+
+        # NNを更新
+        self.dqn.optimize()
 
 
     def judge_simulation_end(self) -> bool : 
@@ -54,4 +77,8 @@ class Simulator :
 
     def get_lane_length(self, lane_index) -> int : 
         return self.lane_dict[lane_index].length
+    
+
+    def calculate_immediate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
+        return state_t1["velocity"] + state_t0["accel"] * 10
 

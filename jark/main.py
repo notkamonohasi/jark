@@ -15,7 +15,7 @@ if __name__ == "__main__" :
         "jark_cand" : [-2, 0, 2],
         "batch_size" : 64,
         "gamma" : 0.995, 
-        "max_episode" : 10000, 
+        "max_episode" : 20000, 
         "limit_velocity" : 20, 
         "limit_accel" : 3, 
         "limit_brake" : -5, 

@@ -8,14 +8,18 @@ if __name__ == "__main__" :
     init_data = {
         "delta_t" : 0.2, 
         "result_path" : "./result", 
-        "state_columns" : ["accel", "velocity"], 
+        "state_columns" : ["accel", "velocity", "over_velocity", "over_accel", "over_brake", "is_stop"], 
         "learning_rate" : 0.01, 
         "target_learning_rate" : 0.01, 
-        "buffer_size" : 1000, 
-        "jark_cand" : [0, 1, 2],
-        "batch_size" : 20,
+        "buffer_size" : 10000, 
+        "jark_cand" : [-2, 0, 2],
+        "batch_size" : 32,
         "gamma" : 0.99, 
-        "max_episode" : 100
+        "max_episode" : 1000, 
+        "limit_velocity" : 20, 
+        "limit_accel" : 3, 
+        "limit_brake" : -5, 
+        "limit_step_count" : 500
     }
 
     # lane
@@ -23,7 +27,7 @@ if __name__ == "__main__" :
     for lane_number in range(1) : 
         lane_init_data = {
             "number" : lane_number, 
-            "length" : 100, 
+            "length" : 200, 
         }
         lane_init_data_list.append(lane_init_data)
     init_data["lane_init_data_list"] = lane_init_data_list
@@ -40,7 +44,10 @@ if __name__ == "__main__" :
             "lane_number" : 0, 
             "lane_place" : 0, 
             "route_list" : [0], 
-            "jark_cand" : init_data["jark_cand"]
+            "jark_cand" : init_data["jark_cand"], 
+            "limit_velocity" : init_data["limit_velocity"], 
+            "limit_accel" : init_data["limit_accel"], 
+            "limit_brake" : init_data["limit_brake"]
         }
         vehicle_init_data_list.append(vehicle_init_data)
     init_data["vehicle_init_data_list"] = vehicle_init_data_list

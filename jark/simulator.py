@@ -25,6 +25,12 @@ class Simulator :
             lane_init_data["number"] : Lane(lane_init_data) for lane_init_data in lane_init_data_list
         }
 
+        # 設定
+        self.limit_velocity = init_data["limit_velocity"]
+        self.limit_accel = init_data["limit_accel"]
+        self.limit_brake = init_data["limit_brake"]
+        self.limit_step_count = init_data["limit_step_count"]
+
         # dqn
         self.dqn = dqn
 
@@ -60,17 +66,37 @@ class Simulator :
 
 
     def judge_simulation_end(self) -> bool : 
+        # 時間がかかりすぎた場合強制終了
+        over_limit_step_count = self.step_count >= self.limit_step_count
+
         # 全ての車がゴールしたら終了
         all_vehicle_goal = True
         for vehicle in self.vehicle_dict.values() : 
             all_vehicle_goal = all_vehicle_goal and vehicle.is_goal
-        return all_vehicle_goal
+
+        return over_limit_step_count or all_vehicle_goal 
 
 
     def get_lane_length(self, lane_index) -> int : 
         return self.lane_dict[lane_index].length
     
 
-    def calculate_immediate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
-        return state_t1["velocity"] ** 2 + state_t0["accel"] * 10
+    def calculate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
+        reward = 0 
+
+        # 速度ボーナス
+        if state_t1["over_velocity"] == False : 
+            reward += state_t1["velocity"] ** 1.5 
+        
+        # 速度制限
+        reward -= state_t1["over_velocity"] * 1000 
+
+        # 加速度制限
+        reward -= state_t1["over_accel"] * 1000 
+        reward -= state_t1["over_brake"] * 1000
+
+        # 停止
+        reward -= state_t1["is_stop"] * 10000
+
+        return reward
 

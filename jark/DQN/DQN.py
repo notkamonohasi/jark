@@ -11,6 +11,8 @@ from .network import DQN_Network
 from .memory import Memory
 from .util import Transition, device
 
+random.seed = 0
+
 class DQN : 
     def __init__(self, init_data : dict[str, any]) : 
         self.state_dimension = len(init_data["state_columns"])
@@ -92,13 +94,7 @@ class DQN :
             tensor([reward], device=device)
         )
 
-    def separate_data(self, data : pd.DataFrame) -> Tuple[np.array, np.array, np.array, np.array, list[bool]] : 
-        prev_np = data[[col for col in self.state_columns]].to_numpy(dtype=np.float32)
-        next_np = data[["next_" + col for col in self.state_columns]].to_numpy(dtype=np.float32)
-        action_np = data["action"].to_numpy()
-        immediate_reward_np = data["immediate_reward"].to_numpy()
-        is_goal_list = data["next_is_goal"].to_list()
-        return prev_np, next_np, action_np, immediate_reward_np, is_goal_list
+
     
 
 

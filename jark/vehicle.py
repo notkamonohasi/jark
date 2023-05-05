@@ -25,6 +25,11 @@ class Vehicle :
 
         # jark
         self.jark_cand : list[int] = init_data["jark_cand"]
+
+        # 設定
+        self.limit_velocity = init_data["limit_velocity"]
+        self.limit_accel = init_data["limit_accel"]
+        self.limit_brake = init_data["limit_brake"]
         
         self.simulator : Simulator = simulator
 
@@ -36,7 +41,11 @@ class Vehicle :
     def recognize(self) -> None : 
         self.state = {
             "accel" : self.accel, 
-            "velocity" : self.velocity,
+            "velocity" : self.velocity, 
+            "over_velocity" : self.velocity > self.limit_velocity, 
+            "over_accel" : self.accel > self.limit_accel, 
+            "over_brake" : self.accel < self.limit_brake, 
+            "is_stop" : self.velocity < 0.01, 
             "is_goal" : self.is_goal
         }
 
@@ -65,6 +74,7 @@ class Vehicle :
     def update_velocity(self) : 
         self.accel += self.jark * self.simulator.delta_t 
         self.velocity += self.accel * self.simulator.delta_t
+        self.velocity = max(0, self.velocity)   # 速度が負になるのを防ぐ
 
 
     def update_place(self) : 
@@ -87,7 +97,7 @@ class Vehicle :
         state = {key : val for key, val in self.state.items()}   # deepcopy
         self.recognize()
         next_state = self.state
-        reward = self.simulator.calculate_immediate_reward(state, next_state)
+        reward = self.simulator.calculate_reward(state, next_state)
         self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
 
 
@@ -96,6 +106,10 @@ class Vehicle :
             "velocity" : round(self.velocity, 2), 
             "accel" : round(self.accel, 2), 
             "jark" : round(self.jark, 2), 
+            "over_velocity" : self.velocity > self.limit_velocity, 
+            "over_accel" : self.accel > self.limit_accel, 
+            "over_brake" : self.accel < self.limit_brake, 
+            "is_stop" : self.velocity < 0.01, 
             "lane_number" : self.lane_number, 
             "lane_place" : round(self.lane_place, 2)
         }

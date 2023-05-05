@@ -77,7 +77,7 @@ class DQN :
     
 
     def calculate_epsilon(self) : 
-        return (self.max_episode - self.pos_episode) / self.max_episode
+        return (self.max_episode - self.pos_episode) / self.max_episode / 2
     
 
     def push_experience(self, state : dict[str, any], action, next_state : dict[str, any], reward, is_goal) : 

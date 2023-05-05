@@ -9,17 +9,17 @@ if __name__ == "__main__" :
         "delta_t" : 0.2, 
         "result_path" : "./result", 
         "state_columns" : ["accel", "velocity", "over_velocity", "over_accel", "over_brake", "is_stop"], 
-        "learning_rate" : 0.01, 
-        "target_learning_rate" : 0.01, 
+        "learning_rate" : 0.001, 
+        "target_learning_rate" : 0.001, 
         "buffer_size" : 10000, 
         "jark_cand" : [-2, 0, 2],
-        "batch_size" : 32,
-        "gamma" : 0.99, 
-        "max_episode" : 1000, 
+        "batch_size" : 64,
+        "gamma" : 0.995, 
+        "max_episode" : 10000, 
         "limit_velocity" : 20, 
         "limit_accel" : 3, 
         "limit_brake" : -5, 
-        "limit_step_count" : 500
+        "limit_step_count" : 300
     }
 
     # lane
@@ -38,7 +38,7 @@ if __name__ == "__main__" :
         vehicle_init_data = {
             "number" : vehicle_number, 
             "length" : 4.4, 
-            "velocity" : 15, 
+            "velocity" : 10, 
             "accel" : 0, 
             "jark" : 0, 
             "lane_number" : 0, 

@@ -85,11 +85,10 @@ class Simulator :
         reward = 0 
 
         # 速度ボーナス
-        if state_t1["over_velocity"] == False : 
-            reward += state_t1["velocity"] ** 1.5 
+        reward += state_t1["velocity"] ** 1.5 
         
         # 速度制限
-        reward -= state_t1["over_velocity"] * 1000 
+        reward -= state_t1["over_velocity"] * ((state_t1["velocity"] - self.limit_velocity) ** 2) * (self.limit_velocity ** 1.5)
 
         # 加速度制限
         reward -= state_t1["over_accel"] * 1000 

@@ -45,6 +45,7 @@ class Vehicle :
             "over_velocity" : self.velocity > self.limit_velocity, 
             "over_accel" : self.accel > self.limit_accel, 
             "over_brake" : self.accel < self.limit_brake, 
+            "distance_intersection" : self.get_distance_intersection(), 
             "is_stop" : self.velocity < 0.01, 
             "is_goal" : self.is_goal
         }
@@ -79,6 +80,7 @@ class Vehicle :
 
     def update_place(self) : 
         travel = self.prev_velocity * self.simulator.delta_t + 0.5 * self.accel * (self.simulator.delta_t ** 2)
+        travel = max(travel, 0)   # 速度が0のとき、travelが負になる
         pos_lane_length = self.simulator.get_lane_length(self.lane_number)
         if self.lane_place + travel < pos_lane_length : 
             self.lane_place = self.lane_place + travel 
@@ -101,6 +103,14 @@ class Vehicle :
         self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
 
 
+    def get_distance_intersection(self) -> float : 
+        # すでにゴールしている時もある
+        if self.is_goal : 
+            return 0 
+        else : 
+            return self.simulator.get_lane_length(self.lane_number) - self.lane_place
+
+
     def make_log(self) -> dict[str, any] : 
         return {
             "velocity" : round(self.velocity, 2), 
@@ -109,6 +119,7 @@ class Vehicle :
             "over_velocity" : self.velocity > self.limit_velocity, 
             "over_accel" : self.accel > self.limit_accel, 
             "over_brake" : self.accel < self.limit_brake, 
+            "distance_intersection" : self.get_distance_intersection(), 
             "is_stop" : self.velocity < 0.01, 
             "lane_number" : self.lane_number, 
             "lane_place" : round(self.lane_place, 2)

@@ -8,7 +8,7 @@ if __name__ == "__main__" :
     init_data = {
         "delta_t" : 0.2, 
         "result_path" : "./result", 
-        "state_columns" : ["accel", "velocity", "over_velocity", "over_accel", "over_brake", "is_stop"], 
+        "state_columns" : ["accel", "velocity", "distance_intersection"], 
         "learning_rate" : 0.001, 
         "target_learning_rate" : 0.001, 
         "buffer_size" : 10000, 

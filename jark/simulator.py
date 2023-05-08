@@ -85,17 +85,23 @@ class Simulator :
         reward = 0 
 
         # 速度ボーナス
-        reward += state_t1["velocity"] ** 1.5 
+        # reward += state_t1["velocity"] ** 1.5
         
         # 速度制限
-        reward -= state_t1["over_velocity"] * ((state_t1["velocity"] - self.limit_velocity) ** 2) * (self.limit_velocity ** 1.5)
+        # reward -= state_t1["over_velocity"] * ((state_t1["velocity"] - self.limit_velocity) ** 2)
+
+        # 速度制御
+        reward -= abs(state_t1["velocity"] - self.limit_velocity)
 
         # 加速度制限
-        reward -= state_t1["over_accel"] * 1000 
-        reward -= state_t1["over_brake"] * 1000
+        reward -= state_t1["over_accel"] * 10
+        reward -= state_t1["over_brake"] * 10
 
         # 停止
         reward -= state_t1["is_stop"] * 10000
+
+        # ターン毎の原点
+        reward -= 1
 
         return reward
 

@@ -30,6 +30,9 @@ class DQN :
             "buffer_size" : init_data["buffer_size"]
         })
 
+        # target_networkの初期値をnetworkと一致させる
+        self.target_network.inititalize_target(self.network)
+
         self.optimizer = optim.Adam(self.network.parameters(), lr=init_data["learning_rate"], amsgrad=True)
 
         self.pos_episode = 1
@@ -65,6 +68,9 @@ class DQN :
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)
         self.optimizer.step()
+
+        # targetを更新
+        self.target_network.update_target(self.network)
 
     # epsilon-greedy
     def decide_action_single(self, state : dict[str, any]) -> int : 

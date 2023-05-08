@@ -15,7 +15,8 @@ if __name__ == "__main__" :
         "jark_cand" : [-2, 0, 2],
         "batch_size" : 64,
         "gamma" : 0.995, 
-        "max_episode" : 20000, 
+        "max_episode" : 2000, 
+        "log_interval" : 100, 
         "limit_velocity" : 20, 
         "limit_accel" : 3, 
         "limit_brake" : -5, 
@@ -68,6 +69,7 @@ if __name__ == "__main__" :
 
     for pos_episode in range(1, init_data["max_episode"] + 1) : 
         print(pos_episode)
+        init_data["pos_episode"] = pos_episode
         init_data["result_path"] = "./result/episode_" + str(pos_episode).zfill(4)
         dqn.pos_episode = pos_episode
         simulator = Simulator(init_data, dqn)

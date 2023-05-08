@@ -3,8 +3,10 @@ import os
 import pandas as pd
 
 class Logger : 
-    def __init__(self, result_path) -> None:
-        self.result_path = result_path
+    def __init__(self, init_data : dict[str, any]) -> None:
+        self.result_path = init_data["result_path"]
+        self.pos_episode = init_data["pos_episode"]
+        self.log_interval = init_data["log_interval"]
 
         self.vehicle_log_dict : dict[int, list[dict[str, any]]] = {}
 
@@ -29,7 +31,7 @@ class Logger :
 
     
     def write_log_vehicle(self, vehicle_number, vehicle_log_list : list[dict[str, any]]) : 
-        if len(vehicle_log_list) == 0 : 
+        if len(vehicle_log_list) == 0 or self.pos_episode % self.log_interval != 0 : 
             return 
         
         columns = vehicle_log_list[0].keys()

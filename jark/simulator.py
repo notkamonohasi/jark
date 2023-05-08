@@ -11,7 +11,11 @@ class Simulator :
         self.step_count = 0 
 
         # loggerを初期化
-        self.logger = Logger(init_data["result_path"])
+        self.logger = Logger({
+            "log_interval" : init_data["log_interval"], 
+            "result_path" : init_data["result_path"], 
+            "pos_episode" : init_data["pos_episode"]
+        })
 
         # vehicleを初期化
         vehicle_init_data_list : list[dict[str, any]] = init_data["vehicle_init_data_list"]
@@ -94,8 +98,8 @@ class Simulator :
         reward -= (state_t1["velocity"] - self.limit_velocity) ** 2
 
         # 加速度制限
-        reward -= state_t1["over_accel"] * ((state_t1["accel"] - self.limit_accel) ** 2) * 100
-        reward -= state_t1["over_brake"] * ((state_t1["accel"] - self.limit_brake) ** 2) * 100
+        reward -= (max(0, state_t1["accel"] - self.limit_accel) ** 2) * 100
+        reward -= (max(0, self.limit_brake - state_t1["accel"]) ** 2) * 100
 
         # 停止
         reward -= state_t1["is_stop"] * 10000

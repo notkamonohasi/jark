@@ -25,17 +25,17 @@ class DQN_Network(nn.Module) :
     def __call__(self, x : tensor) -> tensor : 
         return self.forward(x)  
 
-    def targetUpdate(self, source : DQN_Network) : 
+    def update_target(self, source : DQN_Network) : 
         if self.target_mode == False : 
-            print("unexpected ActorNetwork::targetUpdate ERROR!!")
+            print("unexpected ActorNetwork::update_target ERROR!!")
             return 
         else : 
             for target_param, param in zip(self.parameters(), source.parameters()) :
-                target_param.data.copy_(target_param.data * (1.0 - self.target_learning_rate) + param.data * self.targetLearningRate)
+                target_param.data.copy_(target_param.data * (1.0 - self.target_learning_rate) + param.data * self.target_learning_rate)
 
-    def targetInitialize(self, source : DQN_Network) : 
+    def inititalize_target(self, source : DQN_Network) : 
         if self.target_mode == False : 
-            print("unexpected targetInitialize ERROR!!")
+            print("unexpected initialize_target ERROR!!")
             return 
         else : 
             for target_param, param in zip(self.parameters(), source.parameters()) :

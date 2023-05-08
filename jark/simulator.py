@@ -94,8 +94,8 @@ class Simulator :
         reward -= (state_t1["velocity"] - self.limit_velocity) ** 2
 
         # 加速度制限
-        reward -= state_t1["over_accel"] * 10
-        reward -= state_t1["over_brake"] * 10
+        reward -= state_t1["over_accel"] * ((state_t1["accel"] - self.limit_accel) ** 2) * 100
+        reward -= state_t1["over_brake"] * ((state_t1["accel"] - self.limit_brake) ** 2) * 100
 
         # 停止
         reward -= state_t1["is_stop"] * 10000

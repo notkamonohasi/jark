@@ -53,7 +53,7 @@ class Vehicle :
     
     # jark決定
     def decide_action(self) -> None : 
-        self.action = self.simulator.dqn.decide_action_single(self.state)
+        self.action = self.simulator.dqn.decide_action(self.state)
         self.jark = self.jark_cand[self.action]
 
     

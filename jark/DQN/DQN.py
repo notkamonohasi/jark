@@ -12,6 +12,8 @@ from .memory import Memory
 from .util import Transition, device
 
 random.seed = 0
+if device == torch.device("cuda") :
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 class DQN : 
     def __init__(self, init_data : dict[str, any]) : 
@@ -73,11 +75,11 @@ class DQN :
         self.target_network.update_target(self.network)
 
     # epsilon-greedy
-    def decide_action_single(self, state : dict[str, any]) -> int : 
+    def decide_action(self, state : dict[str, any]) -> int : 
         if random.uniform(0, 1) <= self.calculate_epsilon() : 
             return random.randint(0, 1000) % self.action_dimension
         else : 
-            state_tensor = tensor([state[col] for col in self.state_columns], dtype=torch.float32)
+            state_tensor = tensor([state[col] for col in self.state_columns], device=device, dtype=torch.float32)
             action = torch.argmax(self.network.forward(state_tensor))
             return action.item()
     

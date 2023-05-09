@@ -18,6 +18,10 @@ class Logger :
 
 
     def write_log(self) : 
+        # 規定回数毎のみ
+        if self.pos_episode % self.log_interval != 0 : 
+            return
+
         # 結果用のディレクトリを作る
         self.make_result_dir()
 
@@ -31,7 +35,8 @@ class Logger :
 
     
     def write_log_vehicle(self, vehicle_number, vehicle_log_list : list[dict[str, any]]) : 
-        if len(vehicle_log_list) == 0 or self.pos_episode % self.log_interval != 0 : 
+        # 空だとバグる
+        if len(vehicle_log_list) == 0 : 
             return 
         
         columns = vehicle_log_list[0].keys()

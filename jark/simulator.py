@@ -4,6 +4,7 @@ from logger import Logger
 from vehicle import Vehicle
 from lane import Lane
 from DQN.DQN import DQN
+import time
 
 class Simulator : 
     def __init__(self, init_data : dict[str, any], dqn : DQN) : 
@@ -46,13 +47,21 @@ class Simulator :
 
 
     def increment(self) -> None : 
+        a = time.time()
+
         # 各vehicleが状況認識（内部の状態は変化しない）
         for vehicle in self.vehicle_dict.values() : 
             vehicle.recognize() 
 
+        b = time.time()
+        print("ab :", b - a)
+
         # 各vehicleが意思決定（更新はまだしない）
         for vehicle in self.vehicle_dict.values() : 
             vehicle.decide_action() 
+
+        c = time.time() 
+        print("bc :", c - b)
 
         # ステップ数を更新
         self.step_count += 1
@@ -61,12 +70,22 @@ class Simulator :
         for vehicle in self.vehicle_dict.values() : 
             vehicle.update() 
 
+        d = time.time()
+        print("dc :", d - c)
+
         # 各vehicleが経験を格納
         for vehicle in self.vehicle_dict.values() : 
             vehicle.push_experience()
 
+        e = time.time() 
+        print("ed :", e - d)
+
         # NNを更新
         self.dqn.optimize()
+
+        f = time.time()
+        print("fe :", f - e)
+        print()
 
 
     def judge_simulation_end(self) -> bool : 

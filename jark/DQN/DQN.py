@@ -105,6 +105,23 @@ class DQN :
             tensor([reward], device=device)
         )
 
+    def get_eval_state(self) -> None : 
+        transitions = self.memory.sample(self.batch_size)
+        batch = Transition(*zip(*transitions))
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, 
+                                                batch.next_state)), device=device, dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+
+        state_action_values = self.network.forward(state_batch).gather(1, action_batch)
+
+        next_state_values = torch.zeros(self.batch_size, device=device)
+        with torch.no_grad():
+            next_state_values[non_final_mask] = self.target_network.forward(non_final_next_states).max(1)[0]
+        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
+
 
     
 

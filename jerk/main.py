@@ -12,10 +12,10 @@ if __name__ == "__main__" :
         "learning_rate" : 0.001, 
         "target_learning_rate" : 0.001, 
         "buffer_size" : 10000, 
-        "jark_cand" : [-2, 0, 2],
+        "jerk_cand" : [-2, 0, 2],
         "batch_size" : 64,
         "gamma" : 0.995, 
-        "max_episode" : 2000, 
+        "max_episode" : 200, 
         "log_interval" : 100, 
         "limit_velocity" : 20, 
         "limit_accel" : 3, 
@@ -28,24 +28,25 @@ if __name__ == "__main__" :
     for lane_number in range(1) : 
         lane_init_data = {
             "number" : lane_number, 
-            "length" : 200, 
+            "length" : 400, 
         }
         lane_init_data_list.append(lane_init_data)
     init_data["lane_init_data_list"] = lane_init_data_list
 
     # vehicle
     vehicle_init_data_list = []
-    for vehicle_number in range(1) : 
+    for vehicle_number in range(2) : 
         vehicle_init_data = {
             "number" : vehicle_number, 
             "length" : 4.4, 
+            "decide_action_way" : "IDM", 
             "velocity" : 10, 
             "accel" : 0, 
-            "jark" : 0, 
+            "jerk" : 0, 
             "lane_number" : 0, 
-            "lane_place" : 0, 
+            "lane_place" : 10 * 2 * vehicle_number,   # 適当
             "route_list" : [0], 
-            "jark_cand" : init_data["jark_cand"], 
+            "jerk_cand" : init_data["jerk_cand"], 
             "limit_velocity" : init_data["limit_velocity"], 
             "limit_accel" : init_data["limit_accel"], 
             "limit_brake" : init_data["limit_brake"]
@@ -59,7 +60,7 @@ if __name__ == "__main__" :
         "buffer_size" : init_data["buffer_size"], 
         "learning_rate" : init_data["learning_rate"],
         "target_learning_rate" : init_data["target_learning_rate"],
-        "jark_cand" : init_data["jark_cand"], 
+        "jerk_cand" : init_data["jerk_cand"], 
         "batch_size" : init_data["batch_size"], 
         "gamma" : init_data["gamma"], 
         "max_episode" : init_data["max_episode"]

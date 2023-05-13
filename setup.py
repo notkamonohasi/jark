@@ -13,7 +13,6 @@ setup(
     cmdclass={'build': CustomBuild },
     install_requires=[
         'torch==2.0.0',
-        'matplotlib==3.4.2',
         'ipykernel==6.19.4',
         'pandas==1.5.2',
         'openpyxl==3.0.10',

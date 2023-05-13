@@ -5,16 +5,20 @@ if TYPE_CHECKING:
 
 from typing import Union 
 
+from util import exit_failure
+from IDM import get_jerk_by_IDM
+
 class Vehicle : 
     def __init__(self, init_data : dict[str, Union[int, float, list[int]]], simulator : Simulator) -> None:
         # 属性
         self.number = init_data["number"]
         self.length = init_data["length"]
+        self.decide_action_way = init_data["decide_action_way"]   # 加速度決定方法
         
         # 速度
         self.velocity = init_data["velocity"]   # m/s 
         self.accel = init_data["accel"]   # m/s^2 
-        self.jark = init_data["jark"]   # m/s^3 
+        self.jerk = init_data["jerk"]   # m/s^3 
 
         # 位置
         self.lane_number = init_data["lane_number"] 
@@ -23,8 +27,8 @@ class Vehicle :
         # 経路
         self.route_list : list[int] = init_data["route_list"]
 
-        # jark
-        self.jark_cand : list[int] = init_data["jark_cand"]
+        # jerk
+        self.jerk_cand : list[int] = init_data["jerk_cand"]
 
         # 設定
         self.limit_velocity = init_data["limit_velocity"]
@@ -34,27 +38,46 @@ class Vehicle :
         self.simulator : Simulator = simulator
 
         self.is_goal = False
-        self.route_index = 0
-
+        self.route_index = 0   # route_listにおける何番目か route_list[route_index] == lane_numberが成立
+ 
     
     # 現在の状態を認識
     def recognize(self) -> None : 
+        # 自身の状態
         self.state = {
             "accel" : self.accel, 
             "velocity" : self.velocity, 
             "over_velocity" : self.velocity > self.limit_velocity, 
             "over_accel" : self.accel > self.limit_accel, 
             "over_brake" : self.accel < self.limit_brake, 
-            "distance_intersection" : self.get_distance_intersection(), 
+            "distance_intersection" : self.get_distance_next_intersection(), 
             "is_stop" : self.velocity < 0.01, 
             "is_goal" : self.is_goal
         }
 
+        # 前の車の情報
+        front_vehicle_info = self.simulator.get_front_vehicle_info(self)
+        if front_vehicle_info == None : 
+            self.state["exist_front_vehicle"] = False 
+            self.state["front_vehicle_distance"] = 1000
+            self.state["front_vehicle_velocity"] = self.limit_velocity
+            self.state["front_vehicle_accel"] = 0
+        else : 
+            self.state["exist_front_vehicle"] = True 
+            self.state["front_vehicle_distance"] = front_vehicle_info["distance"]
+            self.state["front_vehicle_velocity"] = front_vehicle_info["velocity"]
+            self.state["front_vehicle_accel"] = front_vehicle_info["accel"]
+
     
-    # jark決定
+    # jerk決定
     def decide_action(self) -> None : 
-        self.action = self.simulator.dqn.decide_action(self.state)
-        self.jark = self.jark_cand[self.action]
+        if self.decide_action_way == "DQN" : 
+            self.action = self.simulator.dqn.decide_action(self.state)
+            self.jerk = self.jerk_cand[self.action]
+        elif self.decide_action_way == "IDM" : 
+            self.jerk = get_jerk_by_IDM(self)
+        else : 
+            exit_failure("invalid Vehicle::decide_action")
 
     
     def update(self) -> None : 
@@ -73,7 +96,7 @@ class Vehicle :
 
 
     def update_velocity(self) : 
-        self.accel += self.jark * self.simulator.delta_t 
+        self.accel += self.jerk * self.simulator.delta_t 
         self.velocity += self.accel * self.simulator.delta_t
         self.velocity = max(0, self.velocity)   # 速度が負になるのを防ぐ
 
@@ -100,27 +123,44 @@ class Vehicle :
         self.recognize()
         next_state = self.state
         reward = self.simulator.calculate_reward(state, next_state)
-        self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
+
+        if self.decide_action_way == "DQN" : 
+            self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
 
 
-    def get_distance_intersection(self) -> float : 
+    # 次の交差点までの距離を取得する
+    def get_distance_next_intersection(self) -> float : 
         # すでにゴールしている時もある
         if self.is_goal : 
             return 0 
         else : 
             return self.simulator.get_lane_length(self.lane_number) - self.lane_place
+        
+
+    # 前の交差点からの距離を取得する
+    def get_distance_prev_intersection(self) -> float : 
+        # この関数は既にゴールしているときには呼び出されないはず
+        if self.is_goal : 
+            exit_failure("already goal in Vehicle::get_distance_prev_intersection")
+
+        return self.lane_place
+        
+    
+    # これから通るレーン番号を返す
+    def get_future_route_list(self) : 
+        return self.route_list[self.route_index + 1 : ]
 
 
     def make_log(self) -> dict[str, any] : 
         return {
-            "velocity" : round(self.velocity, 2), 
-            "accel" : round(self.accel, 2), 
-            "jark" : round(self.jark, 2), 
-            "over_velocity" : self.velocity > self.limit_velocity, 
-            "over_accel" : self.accel > self.limit_accel, 
-            "over_brake" : self.accel < self.limit_brake, 
-            "distance_intersection" : self.get_distance_intersection(), 
-            "is_stop" : self.velocity < 0.01, 
+            "velocity" : round(self.state["velocity"], 2), 
+            "accel" : round(self.state["accel"], 2), 
+            "jerk" : round(self.jerk, 2), 
+            "exist_front_vehicle" : self.state["exist_front_vehicle"], 
+            "front_vehicle_velocity" : round(self.state["front_vehicle_velocity"], 2),
+            "front_vehicle_accel" : round(self.state["front_vehicle_accel"], 2),
+            "front_vehicle_distance" : round(self.state["front_vehicle_distance"], 2),
+            "distance_intersection" : round(self.get_distance_next_intersection(), 2), 
             "lane_number" : self.lane_number, 
             "lane_place" : round(self.lane_place, 2)
         }

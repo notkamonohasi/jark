@@ -18,10 +18,10 @@ if device == torch.device("cuda") :
 class DQN : 
     def __init__(self, init_data : dict[str, any]) : 
         self.state_dimension = len(init_data["state_columns"])
-        self.action_dimension = len(init_data["jark_cand"])
+        self.action_dimension = len(init_data["jerk_cand"])
 
         self.max_episode = init_data["max_episode"]
-        self.jark_cand = init_data["jark_cand"]
+        self.jerk_cand = init_data["jerk_cand"]
         self.network = DQN_Network(self.state_dimension, self.action_dimension, False, 0)
         self.target_network = DQN_Network(self.state_dimension, self.action_dimension, True, init_data["target_learning_rate"])
         self.state_columns = init_data["state_columns"]

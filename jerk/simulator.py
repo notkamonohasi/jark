@@ -1,4 +1,5 @@
 
+from typing import Union
 
 from logger import Logger
 from vehicle import Vehicle
@@ -28,6 +29,8 @@ class Simulator :
         self.lane_dict : dict[int, Lane] = {
             lane_init_data["number"] : Lane(lane_init_data) for lane_init_data in lane_init_data_list
         }
+        for lane in self.lane_dict.values() : 
+            lane.update(self.vehicle_dict)
 
         # 設定
         self.limit_velocity = init_data["limit_velocity"]
@@ -57,9 +60,13 @@ class Simulator :
         # ステップ数を更新
         self.step_count += 1
 
-        # 各vehicleを更新する
+        # 各vehicleの状態を更新する
         for vehicle in self.vehicle_dict.values() : 
             vehicle.update() 
+
+        # 各laneの状態を更新する
+        for lane in self.lane_dict.values() : 
+            lane.update(self.vehicle_dict)
 
         # 各vehicleが経験を格納
         for vehicle in self.vehicle_dict.values() : 
@@ -84,6 +91,45 @@ class Simulator :
     def get_lane_length(self, lane_index) -> int : 
         return self.lane_dict[lane_index].length
     
+    
+    def get_front_vehicle_info(self, vehicle : Vehicle) -> dict[str, any] : 
+        vehicle = self.vehicle_dict[vehicle.number]
+
+        # このターンにゴールしている可能性あり
+        if vehicle.is_goal : 
+            return None
+        
+        # まずは今のレーンを見る
+        front_vehicle_number = self.lane_dict[vehicle.lane_number].get_front_vehicle_number(vehicle.number)
+        
+        # 同じレーンに前の車が存在する場合はそのまま距離を計算
+        # 見つからなかった場合は、見つかるまでの次のレーンを見に行く
+        if front_vehicle_number != None : 
+            front_vehicle_distance = self.vehicle_dict[vehicle.number].get_distance_next_intersection() - \
+                                        self.vehicle_dict[front_vehicle_number].get_distance_next_intersection()
+        else : 
+            front_vehicle_distance = vehicle.get_distance_next_intersection()
+            futere_route_list = vehicle.get_future_route_list()
+            for lane_number in futere_route_list : 
+                front_vehicle_number = self.lane_dict[lane_number].get_back_vehicle_number()
+                if front_vehicle_number != None : 
+                    front_vehicle_distance += self.vehicle_dict[front_vehicle_number].get_distance_prev_intersection()
+                    break
+                else : 
+                    front_vehicle_distance += self.lane_dict[lane_number].length
+        
+        if front_vehicle_number == None : 
+            return None
+        else : 
+            # front_vehicle_distanceを車長分修正
+            front_vehicle_distance -= self.vehicle_dict[vehicle.number].length / 2 - \
+                                        self.vehicle_dict[front_vehicle_number].length / 2
+            return {
+                "distance" : front_vehicle_distance, 
+                "velocity" : self.vehicle_dict[front_vehicle_number].velocity, 
+                "accel" : self.vehicle_dict[front_vehicle_number].accel
+            }
+        
 
     def calculate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
         reward = 0 

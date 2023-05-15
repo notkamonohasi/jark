@@ -108,9 +108,6 @@ class Vehicle :
         # 場所を更新する
         self.update_place()
 
-        # 更新結果を記録
-        self.simulator.logger.register_vehicle_log(self.number, self.make_log())
-
 
     def update_velocity(self) : 
         self.accel += self.jerk * self.simulator.delta_t 
@@ -143,6 +140,9 @@ class Vehicle :
         if self.decide_action_way == "DQN" : 
             self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
 
+        # 経験をloggerに登録
+        self.simulator.logger.register_vehicle_log(self.number, self.make_log(state, reward))
+
 
     # 次の交差点までの距離を取得する
     def get_distance_next_intersection(self) -> float : 
@@ -167,9 +167,10 @@ class Vehicle :
         return self.route_list[self.route_index + 1 : ]
 
 
-    def make_log(self) -> dict[str, any] : 
+    def make_log(self, state : dict[str, any], reward) -> dict[str, any] : 
         return {
-            "velocity" : round(self.state["velocity"], 2), 
+            "reward" : reward, 
+            "velocity" : round(state["velocity"], 2), 
             "accel" : round(self.state["accel"], 2), 
             "jerk" : round(self.jerk, 2), 
             "exist_front_vehicle" : self.state["exist_front_vehicle"], 

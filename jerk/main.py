@@ -1,5 +1,5 @@
 
-import os
+import os, random
 
 from simulator import Simulator 
 from DQN.DQN import DQN
@@ -28,7 +28,7 @@ if __name__ == "__main__" :
     for lane_number in range(1) : 
         lane_init_data = {
             "number" : lane_number, 
-            "length" : 400, 
+            "length" : random.randint(300, 500), 
         }
         lane_init_data_list.append(lane_init_data)
     init_data["lane_init_data_list"] = lane_init_data_list

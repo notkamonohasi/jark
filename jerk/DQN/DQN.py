@@ -87,7 +87,7 @@ class DQN :
     def calculate_epsilon(self) : 
         half_episode = self.max_episode // 2
         if self.pos_episode < half_episode : 
-            epsilon = (half_episode - self.pos_episode) / half_episode * 0.4 + 0.1 
+            epsilon = (half_episode - self.pos_episode) / half_episode * 0.2 + 0.1 
         else : 
             epsilon = (self.max_episode - self.pos_episode) / half_episode * 0.1
         return epsilon

@@ -10,10 +10,10 @@ class DQN_Network(nn.Module) :
         super().__init__()
         self.target_mode = target_mode
         self.target_learning_rate = target_learning_rate
-        self.fc1 = nn.Linear(state_dimension, 24)
-        self.fc2 = torch.nn.Linear(24, 24)
-        self.fc3 = torch.nn.Linear(24, 24)
-        self.fc4 = torch.nn.Linear(24, action_dimension)
+        self.fc1 = torch.nn.Linear(state_dimension, 36)
+        self.fc2 = torch.nn.Linear(36, 36)
+        self.fc3 = torch.nn.Linear(36, 36)
+        self.fc4 = torch.nn.Linear(36, action_dimension)
 
     def forward(self, x : tensor) -> tensor : 
         x = F.relu(self.fc1(x))

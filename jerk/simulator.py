@@ -49,16 +49,13 @@ class Simulator :
 
 
     def increment(self) -> None : 
-        # 各vehicleが状況認識（内部の状態は変化しない）
+        # 各vehicleが時刻tの状況を認識（内部の状態は変化しない）
         for vehicle in self.vehicle_dict.values() : 
-            vehicle.recognize() 
+            vehicle.recognize(next_recognize=False) 
 
         # 各vehicleが意思決定（更新はまだしない）
         for vehicle in self.vehicle_dict.values() : 
             vehicle.decide_action() 
-
-        # ステップ数を更新
-        self.step_count += 1
 
         # 各vehicleの状態を更新する
         for vehicle in self.vehicle_dict.values() : 
@@ -68,12 +65,19 @@ class Simulator :
         for lane in self.lane_dict.values() : 
             lane.update(self.vehicle_dict)
 
+        # 各vehicleが時刻t+1の状況を認識
+        for vehicle in self.vehicle_dict.values() : 
+            vehicle.recognize(next_recognize=True) 
+
         # 各vehicleが経験を格納
         for vehicle in self.vehicle_dict.values() : 
             vehicle.push_experience()
 
         # NNを更新
         self.dqn.optimize()
+
+        # ステップ数を更新
+        self.step_count += 1
 
 
     def judge_simulation_end(self) -> bool : 
@@ -85,7 +89,17 @@ class Simulator :
         for vehicle in self.vehicle_dict.values() : 
             all_vehicle_goal = all_vehicle_goal and vehicle.is_goal
 
-        return over_limit_step_count or all_vehicle_goal 
+        # 衝突している車があったら終了
+        collision = False 
+        for vehicle in self.vehicle_dict.values() : 
+            # vehicleが発生したターンはstateが存在しないのでtry-catchする
+            try : 
+                if vehicle.state["front_vehicle_distance"] < 0 : 
+                    collision = True
+            except : 
+                pass
+
+        return over_limit_step_count or all_vehicle_goal or collision 
 
 
     def get_lane_length(self, lane_index) -> int : 
@@ -122,6 +136,7 @@ class Simulator :
             return None
         else : 
             # front_vehicle_distanceを車長分修正
+            # これにより、距離が負になる（＝衝突する）こともある
             front_vehicle_distance -= self.vehicle_dict[vehicle.number].length / 2 - \
                                         self.vehicle_dict[front_vehicle_number].length / 2
             return {
@@ -150,8 +165,13 @@ class Simulator :
         # 停止
         reward -= state_t1["is_stop"] * 10000
 
+        # 衝突
+        reward -= state_t1["is_collision"] * 10000
+
         # ターン毎の減点
         reward -= 1
 
         return reward
+    
+ 
 

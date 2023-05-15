@@ -15,7 +15,7 @@ if __name__ == "__main__" :
         "jerk_cand" : [-2, 0, 2],
         "batch_size" : 64,
         "gamma" : 0.995, 
-        "max_episode" : 200, 
+        "max_episode" : 2000, 
         "log_interval" : 100, 
         "limit_velocity" : 20, 
         "limit_accel" : 3, 
@@ -35,11 +35,11 @@ if __name__ == "__main__" :
 
     # vehicle
     vehicle_init_data_list = []
-    for vehicle_number in range(2) : 
+    for vehicle_number in range(1) : 
         vehicle_init_data = {
             "number" : vehicle_number, 
             "length" : 4.4, 
-            "decide_action_way" : "IDM", 
+            "decide_action_way" : "DQN", 
             "velocity" : 10, 
             "accel" : 0, 
             "jerk" : 0, 

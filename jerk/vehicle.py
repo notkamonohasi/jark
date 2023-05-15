@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from .simulator import Simulator
 
 from typing import Union 
+import copy 
 
 from util import exit_failure
 from IDM import get_jerk_by_IDM
@@ -37,12 +38,20 @@ class Vehicle :
         
         self.simulator : Simulator = simulator
 
+        self.state_record = {}   # 各時刻での状態を記録
+
         self.is_goal = False
         self.route_index = 0   # route_listにおける何番目か route_list[route_index] == lane_numberが成立
  
     
     # 現在の状態を認識
-    def recognize(self) -> None : 
+    # next_recognizeがTrueのとき、時刻t+1の状況を認識している
+    def recognize(self, next_recognize : bool) -> None : 
+        # state_recordに記録があったら、計算時間の節約のためにそれを使う
+        if next_recognize == False and self.simulator.step_count in self.state_record.keys() : 
+            self.state = self.state_record[self.simulator.step_count]
+            return
+
         # 自身の状態
         self.state = {
             "accel" : self.accel, 
@@ -62,11 +71,19 @@ class Vehicle :
             self.state["front_vehicle_distance"] = 1000
             self.state["front_vehicle_velocity"] = self.limit_velocity
             self.state["front_vehicle_accel"] = 0
+            self.state["is_collision"] = False
         else : 
             self.state["exist_front_vehicle"] = True 
             self.state["front_vehicle_distance"] = front_vehicle_info["distance"]
             self.state["front_vehicle_velocity"] = front_vehicle_info["velocity"]
             self.state["front_vehicle_accel"] = front_vehicle_info["accel"]
+            self.state["is_collision"] = (front_vehicle_info["distance"] < 0)
+
+        # 記録結果をstate_recordにpush
+        if next_recognize == True : 
+            self.state_record[self.simulator.step_count + 1] = copy.deepcopy(self.state)
+        else : 
+            self.state_record[self.simulator.step_count + 0] = copy.deepcopy(self.state)
 
     
     # jerk決定
@@ -119,9 +136,8 @@ class Vehicle :
 
 
     def push_experience(self) : 
-        state = {key : val for key, val in self.state.items()}   # deepcopy
-        self.recognize()
-        next_state = self.state
+        state      = self.state_record[self.simulator.step_count]
+        next_state = self.state_record[self.simulator.step_count + 1]
         reward = self.simulator.calculate_reward(state, next_state)
 
         if self.decide_action_way == "DQN" : 

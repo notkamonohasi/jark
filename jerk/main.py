@@ -15,11 +15,11 @@ if __name__ == "__main__" :
         "jerk_cand" : [-2, 0, 2],
         "batch_size" : 128,
         "gamma" : 0.995, 
-        "max_episode" : 20000, 
+        "max_episode" : 5000, 
         "log_interval" : 100, 
         "limit_velocity" : 20, 
         "limit_accel" : 2, 
-        "limit_brake" : -5, 
+        "limit_brake" : -3, 
         "limit_step_count" : 300
     }
 

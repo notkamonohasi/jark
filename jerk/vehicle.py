@@ -111,6 +111,8 @@ class Vehicle :
 
     def update_velocity(self) : 
         self.accel += self.jerk * self.simulator.delta_t 
+        self.accel = min(self.limit_accel, self.accel)   # 最大値を超えないようにする
+        self.accel = max(self.limit_brake, self.accel)   # 最小値を超えないようにする
         self.velocity += self.accel * self.simulator.delta_t
         self.velocity = max(0, self.velocity)   # 速度が負になるのを防ぐ
 
@@ -135,10 +137,11 @@ class Vehicle :
     def push_experience(self) : 
         state      = self.state_record[self.simulator.step_count]
         next_state = self.state_record[self.simulator.step_count + 1]
+        action = self.action
         reward = self.simulator.calculate_reward(state, next_state)
 
         if self.decide_action_way == "DQN" : 
-            self.simulator.dqn.push_experience(state, self.action, next_state, reward, self.is_goal)
+            self.simulator.dqn.push_experience(state, action, next_state, reward, self.is_goal)
 
         # 経験をloggerに登録
         self.simulator.logger.register_vehicle_log(self.number, self.make_log(state, reward))
@@ -169,11 +172,11 @@ class Vehicle :
 
     def make_log(self, state : dict[str, any], reward) -> dict[str, any] : 
         return {
-            "reward" : reward, 
+            "reward" : round(reward, 2), 
             "velocity" : round(state["velocity"], 2), 
             "accel" : round(self.state["accel"], 2), 
             "jerk" : round(self.jerk, 2), 
-            "exist_front_vehicle" : self.state["exist_front_vehicle"], 
+            "exist_front_vehicle" : round(self.state["exist_front_vehicle"], 2), 
             "front_vehicle_velocity" : round(self.state["front_vehicle_velocity"], 2),
             "front_vehicle_accel" : round(self.state["front_vehicle_accel"], 2),
             "front_vehicle_distance" : round(self.state["front_vehicle_distance"], 2),

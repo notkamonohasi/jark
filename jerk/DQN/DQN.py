@@ -60,15 +60,14 @@ class DQN :
             next_state_values[non_final_mask] = self.target_network.forward(non_final_next_states).max(1)[0]
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
+        criterion = nn.MSELoss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)
+        # torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)
         self.optimizer.step()
 
         # targetを更新
@@ -79,10 +78,11 @@ class DQN :
         if random.uniform(0, 1) <= self.calculate_epsilon() : 
             return random.randint(0, 1000) % self.action_dimension
         else : 
-            state_tensor = tensor([state[col] for col in self.state_columns], device=device, dtype=torch.float32)
-            action = torch.argmax(self.network.forward(state_tensor))
-            return action.item()
-    
+            with torch.no_grad() : 
+                state_tensor = tensor([state[col] for col in self.state_columns], device=device, dtype=torch.float32)
+                action = torch.argmax(self.network.forward(state_tensor))
+                return action.item()
+        
 
     def calculate_epsilon(self) : 
         half_episode = self.max_episode // 2

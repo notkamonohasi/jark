@@ -8,7 +8,7 @@ if __name__ == "__main__" :
     init_data = {
         "delta_t" : 0.2, 
         "result_path" : "./result", 
-        "state_columns" : ["accel", "velocity", "distance_intersection"], 
+        "state_columns" : ["accel", "velocity", "distance_intersection", "BLUE", "YELLOW_TO_RED", "RED", "YELLOW_TO_BLUE", "remain_time"], 
         "learning_rate" : 0.0001, 
         "target_learning_rate" : 0.005, 
         "buffer_size" : 10000, 
@@ -27,8 +27,8 @@ if __name__ == "__main__" :
     signal_init_data_list = [
         {
             "number" : 0, 
-            "first_time" : 0, 
-            "interval_list" : [5, 1, 5, 1]
+            "first_time" : random.randint(0, 1000), 
+            "interval_list" : [30, 4, 30, 4]
         }
     ]
     init_data["signal_init_data_list"] = signal_init_data_list

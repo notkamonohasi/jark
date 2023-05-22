@@ -42,6 +42,7 @@ class Vehicle :
         self.state_record = {}   # 各時刻での状態を記録
 
         self.is_goal = False
+        self.ignore_signal = False
         self.route_index = 0   # route_listにおける何番目か route_list[route_index] == lane_numberが成立
  
     
@@ -61,7 +62,8 @@ class Vehicle :
             "over_brake" : self.accel < self.limit_brake, 
             "distance_intersection" : self.get_distance_next_intersection(), 
             "is_stop" : self.velocity < 0.01, 
-            "is_goal" : self.is_goal
+            "is_goal" : self.is_goal, 
+            "ignore_signal" : self.ignore_signal
         }
 
         # 前の車の情報
@@ -134,15 +136,28 @@ class Vehicle :
         travel = self.prev_velocity * self.simulator.delta_t + 0.5 * self.accel * (self.simulator.delta_t ** 2)
         travel = max(travel, 0)   # 速度が0のとき、travelが負になる
         pos_lane_length = self.simulator.get_lane_length(self.lane_number)
-        if self.lane_place + travel < pos_lane_length : 
+        if self.lane_place + travel < pos_lane_length :   # tとt+1で同一レーン
             self.lane_place = self.lane_place + travel 
-        else : 
+        else :   # t+1で違うレーンに移動
+            # 信号を守ったかチェック
+            self.ignore_signal = False
+            intersection_number = self.simulator.lane_dict[self.lane_number].to_intersection_number
+            signal_number = self.simulator.intersection_dict[intersection_number].signal_number
+            if signal_number == None : 
+                pass 
+            else : 
+                signal_state = self.simulator.signal_dict[signal_number].get_signal_state()
+                aspect : Aspect = signal_state["aspect"]
+                if aspect in [Aspect.RED, Aspect.YELLOW_TO_BLUE] : 
+                    self.ignore_signal = True
+
+            # レーン番号とレーン位置を修正   
             self.route_index += 1 
-            if self.route_index == len(self.route_list) : 
+            if self.route_index == len(self.route_list) :   # ゴール
                 self.is_goal = True
                 self.lane_number = -1 
                 self.lane_place = 0 
-            else : 
+            else :   # レーン移動
                 self.lane_number = self.route_list[self.route_index]
                 self.lane_place = self.lane_place + travel - pos_lane_length
 
@@ -209,6 +224,7 @@ class Vehicle :
             "front_vehicle_accel" : round(self.state["front_vehicle_accel"], 2),
             "front_vehicle_distance" : round(self.state["front_vehicle_distance"], 2),
             "distance_intersection" : round(self.get_distance_next_intersection(), 2), 
+            "ignore_signal" : self.state["ignore_signal"], 
             "BLUE" : self.state["BLUE"], 
             "YELLOW_TO_RED" : self.state["YELLOW_TO_RED"], 
             "RED" : self.state["RED"], 

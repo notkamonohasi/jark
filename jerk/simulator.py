@@ -10,6 +10,9 @@ from jerk.DQN.DQN import DQN
 from jerk.util import calculate_euclidean_distance
 
 
+BASIC_DISTANCE = 100
+
+
 class Simulator : 
     def __init__(self, init_data : dict[str, any], dqn : DQN) : 
         self.delta_t = init_data["delta_t"]
@@ -169,13 +172,17 @@ class Simulator :
             # front_vehicle_distanceを車長分修正
             # これにより、距離が負になる（＝衝突する）こともある
             front_vehicle_distance -= self.vehicle_dict[vehicle.number].length / 2 - \
-                                        self.vehicle_dict[front_vehicle_number].length / 2
+                                      self.vehicle_dict[front_vehicle_number].length / 2
             return {
                 "distance" : front_vehicle_distance, 
                 "velocity" : self.vehicle_dict[front_vehicle_number].velocity, 
                 "accel" : self.vehicle_dict[front_vehicle_number].accel
             }
-        
+    
+
+    def calculate_minimum_velocity(self, distance_intersection) : 
+        return self.limit_velocity * distance_intersection / BASIC_DISTANCE
+
 
     def calculate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
         reward = 0 
@@ -187,14 +194,22 @@ class Simulator :
         # reward -= state_t1["over_velocity"] * ((state_t1["velocity"] - self.limit_velocity) ** 2)
 
         # 速度制御
-        reward -= ((state_t1["velocity"] - self.limit_velocity) ** 2) / 20
+        distance_intersection = state_t1["distance_intersection"]
+        minimum_velocity = self.calculate_minimum_velocity(distance_intersection)
+        velocity = state_t1["velocity"]
+        if distance_intersection > BASIC_DISTANCE : 
+            reward -= ((velocity - self.limit_velocity) ** 2) / 20
+        else : 
+            if velocity > self.limit_velocity : 
+                reward -= ((velocity - self.limit_velocity) ** 2) / 20
+            elif velocity < minimum_velocity : 
+                reward -= ((minimum_velocity - velocity) ** 2) / 20
 
-        # 加速度制限
-        reward -= (max(0, state_t1["accel"] - self.limit_accel) ** 2) * 100
-        reward -= (max(0, self.limit_brake - state_t1["accel"]) ** 2) * 100
+        # 信号無視
+        reward -= state_t1["ignore_signal"] * 1000
 
         # 停止
-        reward -= state_t1["is_stop"] * 100
+        # reward -= state_t1["is_stop"] * 100
 
         # 衝突
         reward -= state_t1["is_collision"] * 100

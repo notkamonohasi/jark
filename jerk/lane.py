@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from .simulator import Simulator
     from .vehicle import Vehicle
 
 from typing import Union
@@ -8,10 +9,16 @@ from util import exit_failure
 
 
 class Lane : 
-    def __init__(self, init_data : dict[str, Union[int, float]]) -> None:
+    def __init__(self, init_data : dict[str, Union[int, float]], simulator : Simulator) -> None:
         self.number = init_data["number"]
-        self.length = init_data["length"]
+        self.from_intersection_number = init_data["from_intersection_number"]
+        self.to_intersection_number = init_data["to_intersection_number"]
         self.on_vehicle_list = []
+
+        self.simulator = simulator
+
+        self.length = self.simulator.get_intersection_distance(self.from_intersection_number, 
+                                                               self.to_intersection_number)
 
 
     def update(self, vehicle_dict : dict[str, Vehicle]) : 

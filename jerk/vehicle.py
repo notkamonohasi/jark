@@ -45,10 +45,9 @@ class Vehicle :
  
     
     # 現在の状態を認識
-    # next_recognizeがTrueのとき、時刻t+1の状況を認識している
-    def recognize(self, next_recognize : bool) -> None : 
+    def recognize(self) -> None : 
         # state_recordに記録があったら、計算時間の節約のためにそれを使う
-        if next_recognize == False and self.simulator.step_count in self.state_record.keys() : 
+        if self.simulator.step_count in self.state_record.keys() : 
             self.state = self.state_record[self.simulator.step_count]
             return
 
@@ -80,10 +79,7 @@ class Vehicle :
             self.state["is_collision"] = (front_vehicle_info["distance"] < 0)
 
         # 記録結果をstate_recordにpush
-        if next_recognize == True : 
-            self.state_record[self.simulator.step_count + 1] = copy.deepcopy(self.state)
-        else : 
-            self.state_record[self.simulator.step_count + 0] = copy.deepcopy(self.state)
+        self.state_record[self.simulator.step_count] = copy.deepcopy(self.state)
 
     
     # jerk決定
@@ -135,8 +131,9 @@ class Vehicle :
 
 
     def push_experience(self) : 
-        state      = self.state_record[self.simulator.step_count]
-        next_state = self.state_record[self.simulator.step_count + 1]
+        # このときのsimulatorの時刻はt+1であることに注意
+        state      = self.state_record[self.simulator.step_count - 1]
+        next_state = self.state_record[self.simulator.step_count]
         action = self.action
         reward = self.simulator.calculate_reward(state, next_state)
 

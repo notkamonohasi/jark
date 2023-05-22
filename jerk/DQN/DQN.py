@@ -11,7 +11,6 @@ from .network import DQN_Network
 from .memory import Memory
 from .util import Transition, device
 
-random.seed = 0
 if device == torch.device("cuda") :
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 

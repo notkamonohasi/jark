@@ -1,10 +1,14 @@
 
 from typing import Union
 
-from logger import Logger
-from vehicle import Vehicle
-from lane import Lane
-from DQN.DQN import DQN
+from jerk.logger import Logger
+from jerk.vehicle import Vehicle
+from jerk.signal import Signal
+from jerk.intersection import Intersection
+from jerk.lane import Lane
+from jerk.DQN.DQN import DQN
+from jerk.util import calculate_euclidean_distance
+
 
 class Simulator : 
     def __init__(self, init_data : dict[str, any], dqn : DQN) : 
@@ -24,10 +28,22 @@ class Simulator :
             vehicle_init_data["number"] : Vehicle(vehicle_init_data, self) for vehicle_init_data in vehicle_init_data_list
         }
 
+        # signalを初期化
+        signal_init_data_list : list[dict[str, any]] = init_data["signal_init_data_list"]
+        self.signal_dict : dict[int, Signal] = {
+            signal_init_data["number"] : Vehicle(signal_init_data, self) for signal_init_data in signal_init_data_list
+        }
+
+        # intersectionを初期化
+        intersection_init_data_list : list[dict[str, any]] = init_data["intersection_init_data_list"]
+        self.intersection_dict : dict[int, Intersection] = {
+            intersection_init_data["number"] : Intersection(intersection_init_data, self) for intersection_init_data in intersection_init_data_list
+        }
+
         # laneを初期化
         lane_init_data_list : list[dict[str, any]] = init_data["lane_init_data_list"]
         self.lane_dict : dict[int, Lane] = {
-            lane_init_data["number"] : Lane(lane_init_data) for lane_init_data in lane_init_data_list
+            lane_init_data["number"] : Lane(lane_init_data, self) for lane_init_data in lane_init_data_list
         }
         for lane in self.lane_dict.values() : 
             lane.update(self.vehicle_dict)
@@ -51,7 +67,7 @@ class Simulator :
     def increment(self) -> None : 
         # 各vehicleが時刻tの状況を認識（内部の状態は変化しない）
         for vehicle in self.vehicle_dict.values() : 
-            vehicle.recognize(next_recognize=False) 
+            vehicle.recognize() 
 
         # 各vehicleが意思決定（更新はまだしない）
         for vehicle in self.vehicle_dict.values() : 
@@ -65,9 +81,13 @@ class Simulator :
         for lane in self.lane_dict.values() : 
             lane.update(self.vehicle_dict)
 
+        # ステップ数を更新
+        # 以降の処理では時刻がずれていることに注意する
+        self.step_count += 1
+
         # 各vehicleが時刻t+1の状況を認識
         for vehicle in self.vehicle_dict.values() : 
-            vehicle.recognize(next_recognize=True) 
+            vehicle.recognize() 
 
         # 各vehicleが経験を格納
         for vehicle in self.vehicle_dict.values() : 
@@ -75,9 +95,6 @@ class Simulator :
 
         # NNを更新
         self.dqn.optimize()
-
-        # ステップ数を更新
-        self.step_count += 1
 
 
     def judge_simulation_end(self) -> bool : 
@@ -104,6 +121,16 @@ class Simulator :
 
     def get_lane_length(self, lane_index) -> int : 
         return self.lane_dict[lane_index].length
+    
+
+    def get_second(self) -> int : 
+        return (self.delta_t * self.step_count)
+    
+
+    def get_intersection_distance(self, inter_number_1, inter_number_2) -> int : 
+        place_1 = self.intersection_dict[inter_number_1].get_place()
+        place_2 = self.intersection_dict[inter_number_2].get_place()
+        return calculate_euclidean_distance(place_1, place_2)
     
     
     def get_front_vehicle_info(self, vehicle : Vehicle) -> dict[str, any] : 

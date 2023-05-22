@@ -23,12 +23,34 @@ if __name__ == "__main__" :
         "limit_step_count" : 300
     }
 
+    # signal
+    signal_init_data_list = []
+    init_data["signal_init_data_list"] = signal_init_data_list
+
+    # intersection
+    intersection_init_data_list = [
+        {
+            "number" : 0, 
+            "y" : 0, 
+            "x" : 0, 
+            "signal_number" : None
+        }, 
+        {
+            "number" : 1, 
+            "y" : 0, 
+            "x" : 400, 
+            "signal_number" : None
+        }
+    ]
+    init_data["intersection_init_data_list"] = intersection_init_data_list
+
     # lane
     lane_init_data_list = []
     for lane_number in range(1) : 
         lane_init_data = {
             "number" : lane_number, 
-            "length" : random.randint(300, 500), 
+            "from_intersection_number" : 0, 
+            "to_intersection_number" : 1
         }
         lane_init_data_list.append(lane_init_data)
     init_data["lane_init_data_list"] = lane_init_data_list

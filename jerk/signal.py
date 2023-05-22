@@ -11,7 +11,6 @@ class Aspect(Enum) :
     YELLOW_TO_RED = 1
     RED = 2
     YELLOW_TO_BLUE = 3
-    ASPECT_SIZE = 4
 
 def convert_index_into_aspect(index : int) -> Aspect : 
     assert index <= 3
@@ -27,15 +26,15 @@ def convert_index_into_aspect(index : int) -> Aspect :
 
 class Signal : 
     def __init__(self, init_data : dict[str, any], simulator : Simulator) -> None:
-        self.signal_number = init_data["signal_number"]
+        self.number = init_data["number"]
         self.first_time = init_data["first_time"]   # 時刻0での位相[s]
         self.interval_list : list[int] = init_data["interval_list"]   # 青 -> 黄 -> 赤 -> 黄
-        
+
         self.simulator = simulator
 
         self.cycle = int(sum(self.interval_list))
 
-        assert len(self.interval_list) == Aspect.ASPECT_SIZE
+        assert len(self.interval_list) == 4
 
         self.update()   # 初期化しておく必要がある
     
@@ -49,15 +48,15 @@ class Signal :
             pos_sum += self.interval_list[index] * 1000
             if pos_sum > amari : 
                 self.signal_aspect : Aspect = convert_index_into_aspect(index)
-                self.remain_second = (amari - pos_sum) / 1000   # msに戻す
-                self.remain_second = round(self.remain_second, 3)   # 表示を綺麗にするため
+                self.remain_time = (pos_sum - amari) / 1000   # msに戻す
+                self.remain_time = round(self.remain_time, 3)   # 表示を綺麗にするため
                 return 
             
 
-    def get_signal_state(self) -> dict[str, Union(Aspect, int)] : 
+    def get_signal_state(self) -> dict[str, Union(Aspect, float)] : 
         return {
-            "signal_aspect" : self.signal_aspect, 
-            "remain_second" : self.remain_second
+            "aspect" : self.signal_aspect, 
+            "remain_time" : self.remain_time
         }
 
         

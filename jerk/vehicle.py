@@ -6,8 +6,9 @@ if TYPE_CHECKING:
 from typing import Union 
 import copy 
 
-from util import exit_failure
-from IDM import get_jerk_by_IDM
+from jerk.util import exit_failure
+from jerk.IDM import get_jerk_by_IDM
+from jerk.signal import Aspect
 
 class Vehicle : 
     def __init__(self, init_data : dict[str, Union[int, float, list[int]]], simulator : Simulator) -> None:
@@ -77,6 +78,22 @@ class Vehicle :
             self.state["front_vehicle_velocity"] = front_vehicle_info["velocity"]
             self.state["front_vehicle_accel"] = front_vehicle_info["accel"]
             self.state["is_collision"] = (front_vehicle_info["distance"] < 0)
+
+        # 信号情報
+        signal_state = self.get_front_signal_state()
+        if signal_state == None : 
+            self.state["BLUE"] = None
+            self.state["YELLOW_TO_RED"] = None 
+            self.state["RED"] = None 
+            self.state["YELLOW_TO_BLUE"] = None
+            self.state["remain_time"] = None
+        else : 
+            self.state["BLUE"] = 0
+            self.state["YELLOW_TO_RED"] = 0
+            self.state["RED"] = 0
+            self.state["YELLOW_TO_BLUE"] = 0
+            self.state[signal_state["aspect"].name] = 1
+            self.state["remain_time"] = signal_state["remain_time"]
 
         # 記録結果をstate_recordにpush
         self.state_record[self.simulator.step_count] = copy.deepcopy(self.state)
@@ -160,6 +177,20 @@ class Vehicle :
             exit_failure("already goal in Vehicle::get_distance_prev_intersection")
 
         return self.lane_place
+    
+
+    # 次の交差点の信号の情報を取得する
+    def get_front_signal_state(self) -> dict[str, Union(Aspect, float)] : 
+        # このターンにゴールした
+        if self.lane_number == -1 : 
+            return None
+        
+        next_intersection_number = self.simulator.lane_dict[self.lane_number].to_intersection_number
+        signal_number = self.simulator.intersection_dict[next_intersection_number].signal_number
+        if signal_number == None : 
+            return None 
+        else : 
+            return self.simulator.signal_dict[signal_number].get_signal_state()
         
     
     # これから通るレーン番号を返す
@@ -178,6 +209,11 @@ class Vehicle :
             "front_vehicle_accel" : round(self.state["front_vehicle_accel"], 2),
             "front_vehicle_distance" : round(self.state["front_vehicle_distance"], 2),
             "distance_intersection" : round(self.get_distance_next_intersection(), 2), 
+            "BLUE" : self.state["BLUE"], 
+            "YELLOW_TO_RED" : self.state["YELLOW_TO_RED"], 
+            "RED" : self.state["RED"], 
+            "YELLOW_TO_BLUE" : self.state["YELLOW_TO_BLUE"], 
+            "remain_time" : self.state["remain_time"], 
             "lane_number" : self.lane_number, 
             "lane_place" : round(self.lane_place, 2)
         }

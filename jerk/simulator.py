@@ -31,7 +31,7 @@ class Simulator :
         # signalを初期化
         signal_init_data_list : list[dict[str, any]] = init_data["signal_init_data_list"]
         self.signal_dict : dict[int, Signal] = {
-            signal_init_data["number"] : Vehicle(signal_init_data, self) for signal_init_data in signal_init_data_list
+            signal_init_data["number"] : Signal(signal_init_data, self) for signal_init_data in signal_init_data_list
         }
 
         # intersectionを初期化
@@ -76,6 +76,10 @@ class Simulator :
         # 各vehicleの状態を更新する
         for vehicle in self.vehicle_dict.values() : 
             vehicle.update() 
+
+        # 各信号の状態を更新する
+        for signal in self.signal_dict.values() : 
+            signal.update()
 
         # 各laneの状態を更新する
         for lane in self.lane_dict.values() : 

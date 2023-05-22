@@ -24,7 +24,13 @@ if __name__ == "__main__" :
     }
 
     # signal
-    signal_init_data_list = []
+    signal_init_data_list = [
+        {
+            "number" : 0, 
+            "first_time" : 0, 
+            "interval_list" : [5, 1, 5, 1]
+        }
+    ]
     init_data["signal_init_data_list"] = signal_init_data_list
 
     # intersection
@@ -39,7 +45,7 @@ if __name__ == "__main__" :
             "number" : 1, 
             "y" : 0, 
             "x" : 400, 
-            "signal_number" : None
+            "signal_number" : 0
         }
     ]
     init_data["intersection_init_data_list"] = intersection_init_data_list
@@ -62,7 +68,7 @@ if __name__ == "__main__" :
             "number" : vehicle_number, 
             "length" : 4.4, 
             "decide_action_way" : "DQN", 
-            "velocity" : 10, 
+            "velocity" : 2, 
             "accel" : 0, 
             "jerk" : 0, 
             "lane_number" : 0, 

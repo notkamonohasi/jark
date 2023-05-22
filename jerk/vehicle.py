@@ -6,9 +6,9 @@ if TYPE_CHECKING:
 from typing import Union 
 import copy 
 
-from jerk.util import exit_failure
-from jerk.IDM import get_jerk_by_IDM
-from jerk.signal import Aspect
+from util import exit_failure
+from IDM import get_jerk_by_IDM
+from signals import Aspect
 
 class Vehicle : 
     def __init__(self, init_data : dict[str, Union[int, float, list[int]]], simulator : Simulator) -> None:

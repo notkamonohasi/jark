@@ -1,13 +1,13 @@
 
 from typing import Union
 
-from jerk.logger import Logger
-from jerk.vehicle import Vehicle
-from jerk.signal import Signal
-from jerk.intersection import Intersection
-from jerk.lane import Lane
-from jerk.DQN.DQN import DQN
-from jerk.util import calculate_euclidean_distance
+from logger import Logger
+from vehicle import Vehicle
+from signals import Signal
+from intersection import Intersection
+from lane import Lane
+from DQN.DQN import DQN
+from util import calculate_euclidean_distance
 
 
 BASIC_DISTANCE = 100

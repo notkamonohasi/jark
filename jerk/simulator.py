@@ -3,14 +3,14 @@ from typing import Union
 
 from logger import Logger
 from vehicle import Vehicle
-from signals import Signal
+from signals import Signal, Aspect
 from intersection import Intersection
 from lane import Lane
 from DQN.DQN import DQN
 from util import calculate_euclidean_distance
 
 
-BASIC_DISTANCE = 100
+BASIC_DISTANCE = 150
 
 
 class Simulator : 
@@ -197,7 +197,7 @@ class Simulator :
         distance_intersection = state_t1["distance_intersection"]
         minimum_velocity = self.calculate_minimum_velocity(distance_intersection)
         velocity = state_t1["velocity"]
-        if distance_intersection > BASIC_DISTANCE : 
+        if distance_intersection > BASIC_DISTANCE or state_t1["aspect"] == Aspect.BLUE : 
             reward -= ((velocity - self.limit_velocity) ** 2) / 20
         else : 
             if velocity > self.limit_velocity : 
@@ -206,10 +206,11 @@ class Simulator :
                 reward -= ((minimum_velocity - velocity) ** 2) / 20
 
         # 信号無視
-        reward -= state_t1["ignore_signal"] * 1000
+        reward -= state_t1["ignore_signal"] * 300
 
         # 停止
-        # reward -= state_t1["is_stop"] * 100
+        if state_t1["is_stop"] and state_t1["aspect"] in [Aspect.BLUE] : 
+            reward -= 100
 
         # 衝突
         reward -= state_t1["is_collision"] * 100

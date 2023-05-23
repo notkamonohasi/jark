@@ -8,19 +8,19 @@ if __name__ == "__main__" :
     init_data = {
         "delta_t" : 0.2, 
         "result_path" : "./result", 
-        "state_columns" : ["accel", "velocity", "distance_intersection", "BLUE", "YELLOW_TO_RED", "RED", "YELLOW_TO_BLUE", "remain_time"], 
+        "state_columns" : ["accel", "velocity", "distance_intersection", "signal_cos", "signal_sin"], 
         "learning_rate" : 0.0001, 
         "target_learning_rate" : 0.005, 
-        "buffer_size" : 20000, 
+        "buffer_size" : 10000, 
         "jerk_cand" : [-2, 0, 2],
         "batch_size" : 128,
         "gamma" : 0.995, 
         "max_episode" : 5000, 
-        "log_interval" : 100, 
-        "limit_velocity" : 20, 
+        "log_interval" : 10, 
+        "limit_velocity" : 15, 
         "limit_accel" : 2, 
         "limit_brake" : -3, 
-        "limit_step_count" : 1000
+        "limit_step_count" : 500
     }
 
     # dqnを初期化

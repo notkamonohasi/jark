@@ -84,18 +84,24 @@ class Vehicle :
         # 信号情報
         signal_state = self.get_front_signal_state()
         if signal_state == None : 
+            self.state["aspect"] = None
             self.state["BLUE"] = None
             self.state["YELLOW_TO_RED"] = None 
             self.state["RED"] = None 
             self.state["YELLOW_TO_BLUE"] = None
             self.state["remain_time"] = None
+            self.state["signal_cos"] = None
+            self.state["signal_sin"] = None
         else : 
+            self.state["aspect"] = signal_state["aspect"]
             self.state["BLUE"] = 0
             self.state["YELLOW_TO_RED"] = 0
             self.state["RED"] = 0
             self.state["YELLOW_TO_BLUE"] = 0
             self.state[signal_state["aspect"].name] = 1
             self.state["remain_time"] = signal_state["remain_time"]
+            self.state["signal_cos"] = signal_state["signal_cos"]
+            self.state["signal_sin"] = signal_state["signal_sin"]
 
         # 記録結果をstate_recordにpush
         self.state_record[self.simulator.step_count] = copy.deepcopy(self.state)

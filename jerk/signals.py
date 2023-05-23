@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from typing import Union
 from enum import Enum
+import math
 
 class Aspect(Enum) : 
     BLUE = 0 
@@ -43,6 +44,10 @@ class Signal :
         # 剰余の計算が入るため、秒からミリ秒に変えて計算する
         pos_time = self.simulator.get_second()   # s
         amari = int((self.first_time + pos_time) * 1000) % int(self.cycle * 1000) 
+
+        self.signal_cos = math.cos(amari / self.cycle)
+        self.signal_sin = math.sin(amari / self.cycle)
+
         pos_sum = 0
         for index in range(len(self.interval_list)) : 
             pos_sum += self.interval_list[index] * 1000
@@ -56,7 +61,9 @@ class Signal :
     def get_signal_state(self) -> dict[str, Union(Aspect, float)] : 
         return {
             "aspect" : self.signal_aspect, 
-            "remain_time" : self.remain_time
+            "remain_time" : self.remain_time, 
+            "signal_cos" : self.signal_cos, 
+            "signal_sin" : self.signal_sin
         }
 
         

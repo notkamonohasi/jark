@@ -17,6 +17,8 @@ class Simulator :
     def __init__(self, init_data : dict[str, any], dqn : DQN) : 
         self.delta_t = init_data["delta_t"]
         self.step_count = 0 
+        
+        self.simulation_end_flag = False
 
         # loggerを初期化
         self.logger = Logger({
@@ -62,7 +64,7 @@ class Simulator :
 
 
     def start(self) -> None : 
-        while self.judge_simulation_end() == False : 
+        while self.simulation_end_flag == False : 
             self.increment() 
         self.logger.write_log()
 
@@ -88,6 +90,9 @@ class Simulator :
         for lane in self.lane_dict.values() : 
             lane.update(self.vehicle_dict)
 
+        # シミュレーションを終了するかの判断
+        self.judge_simulation_end()
+
         # ステップ数を更新
         # 以降の処理では時刻がずれていることに注意する
         self.step_count += 1
@@ -104,14 +109,26 @@ class Simulator :
         self.dqn.optimize()
 
 
-    def judge_simulation_end(self) -> bool : 
+    def judge_simulation_end(self) -> None : 
         # 時間がかかりすぎた場合強制終了
-        over_limit_step_count = self.step_count >= self.limit_step_count
+        over_limit_step_count = False
+        if self.step_count >= self.limit_step_count : 
+            over_limit_step_count = True
+            reason = "time over"
+
+        # 一つの車がゴールしたら終了
+        one_vehicle_goal = False 
+        for vehicle in self.vehicle_dict.values() : 
+            one_vehicle_goal = one_vehicle_goal or vehicle.is_goal
+        if one_vehicle_goal : 
+            reason = "one vehicle goal"
 
         # 全ての車がゴールしたら終了
         all_vehicle_goal = True
         for vehicle in self.vehicle_dict.values() : 
             all_vehicle_goal = all_vehicle_goal and vehicle.is_goal
+        if all_vehicle_goal : 
+            reason = "all vehicle goal"
 
         # 衝突している車があったら終了
         collision = False 
@@ -120,18 +137,23 @@ class Simulator :
             try : 
                 if vehicle.state["front_vehicle_distance"] < vehicle.length : 
                     collision = True
+                    reason = "collision"
             except : 
                 pass
 
-        return over_limit_step_count or all_vehicle_goal or collision 
+        self.simulation_end_flag = over_limit_step_count or one_vehicle_goal or all_vehicle_goal or collision
+        if self.simulation_end_flag : 
+            print(reason)
+            for vehicle in self.vehicle_dict.values() : 
+                vehicle.is_goal = True
 
 
     def get_lane_length(self, lane_index) -> int : 
         return self.lane_dict[lane_index].length
     
 
-    def get_second(self) -> int : 
-        return (self.delta_t * self.step_count)
+    def get_second(self) -> float : 
+        return self.delta_t * self.step_count
     
 
     def get_intersection_distance(self, inter_number_1, inter_number_2) -> int : 
@@ -202,6 +224,7 @@ class Simulator :
         # 車間距離
         if state_t1["exist_front_vehicle"] : 
             reward -= min(((state_t1["proper_front_vehicle_distance"] - state_t1["front_vehicle_distance"]) ** 2) / 50, 100)
+            reward -= 1.0 / state_t1["front_vehicle_distance"]
 
         # 速度制御
         """

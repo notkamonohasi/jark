@@ -15,7 +15,7 @@ if __name__ == "__main__" :
         "jerk_cand" : [-1, 0, 1],
         "batch_size" : 128,
         "gamma" : 0.995, 
-        "max_episode" : 5000, 
+        "max_episode" : 50000, 
         "log_interval" : 10, 
         "limit_velocity" : 15, 
         "limit_accel" : 1, 
@@ -38,6 +38,7 @@ if __name__ == "__main__" :
     os.system("rm -rf ./result")
 
     for pos_episode in range(1, init_data["max_episode"] + 1) : 
+        print()
         print(pos_episode)
 
         # signal

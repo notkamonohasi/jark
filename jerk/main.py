@@ -8,17 +8,17 @@ if __name__ == "__main__" :
     init_data = {
         "delta_t" : 0.2, 
         "result_path" : "./result", 
-        "state_columns" : ["accel", "velocity", "distance_intersection", "signal_cos", "signal_sin"], 
+        "state_columns" : ["accel", "velocity", "front_vehicle_distance", "proper_front_vehicle_distance"], 
         "learning_rate" : 0.0001, 
         "target_learning_rate" : 0.005, 
         "buffer_size" : 10000, 
-        "jerk_cand" : [-2, 0, 2],
+        "jerk_cand" : [-1, 0, 1],
         "batch_size" : 128,
         "gamma" : 0.995, 
         "max_episode" : 5000, 
         "log_interval" : 10, 
         "limit_velocity" : 15, 
-        "limit_accel" : 2, 
+        "limit_accel" : 1, 
         "limit_brake" : -3, 
         "limit_step_count" : 500
     }
@@ -41,13 +41,7 @@ if __name__ == "__main__" :
         print(pos_episode)
 
         # signal
-        signal_init_data_list = [
-            {
-                "number" : 0, 
-                "first_time" : random.randint(0, 1000), 
-                "interval_list" : [30, 4, 30, 4]
-            }
-        ]
+        signal_init_data_list = []
         init_data["signal_init_data_list"] = signal_init_data_list
 
         # intersection
@@ -61,8 +55,8 @@ if __name__ == "__main__" :
             {
                 "number" : 1, 
                 "y" : 0, 
-                "x" : random.randint(300, 500), 
-                "signal_number" : 0
+                "x" : 400, 
+                "signal_number" : None
             }
         ]
         init_data["intersection_init_data_list"] = intersection_init_data_list
@@ -80,16 +74,16 @@ if __name__ == "__main__" :
 
         # vehicle
         vehicle_init_data_list = []
-        for vehicle_number in range(1) : 
+        for vehicle_number in range(2) : 
             vehicle_init_data = {
                 "number" : vehicle_number, 
                 "length" : 4.4, 
-                "decide_action_way" : "DQN", 
+                "decide_action_way" : "DQN" if vehicle_number == 0 else "IDM", 
                 "velocity" : 2, 
                 "accel" : 0, 
                 "jerk" : 0, 
                 "lane_number" : 0, 
-                "lane_place" : 10 * 2 * vehicle_number,   # 適当
+                "lane_place" : 10 * vehicle_number,   # 適当
                 "route_list" : [0], 
                 "jerk_cand" : init_data["jerk_cand"], 
                 "limit_velocity" : init_data["limit_velocity"], 

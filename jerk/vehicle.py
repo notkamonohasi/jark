@@ -7,7 +7,7 @@ from typing import Union
 import copy 
 
 from util import exit_failure
-from IDM import get_jerk_by_IDM
+from IDM import get_jerk_by_IDM, get_proper_front_vehicle_distance
 from signals import Aspect
 
 class Vehicle : 
@@ -72,14 +72,16 @@ class Vehicle :
             self.state["exist_front_vehicle"] = False 
             self.state["front_vehicle_distance"] = 1000
             self.state["front_vehicle_velocity"] = self.limit_velocity
-            self.state["front_vehicle_accel"] = 0
+            self.state["front_vehicle_accel"] = None
             self.state["is_collision"] = False
+            self.state["proper_front_vehicle_distance"] = -1
         else : 
             self.state["exist_front_vehicle"] = True 
             self.state["front_vehicle_distance"] = front_vehicle_info["distance"]
             self.state["front_vehicle_velocity"] = front_vehicle_info["velocity"]
             self.state["front_vehicle_accel"] = front_vehicle_info["accel"]
-            self.state["is_collision"] = (front_vehicle_info["distance"] < 0)
+            self.state["is_collision"] = (front_vehicle_info["distance"] < self.length)
+            self.state["proper_front_vehicle_distance"] = get_proper_front_vehicle_distance(self)
 
         # 信号情報
         signal_state = self.get_front_signal_state()
@@ -102,6 +104,15 @@ class Vehicle :
             self.state["remain_time"] = signal_state["remain_time"]
             self.state["signal_cos"] = signal_state["signal_cos"]
             self.state["signal_sin"] = signal_state["signal_sin"]
+
+        # 衝突したら終わり
+        if self.state["is_collision"] : 
+            self.is_goal = True
+
+        # 前の車がいなくなったら終わり
+        if self.state["exist_front_vehicle"] == False : 
+            pass
+            # self.is_goal = True
 
         # 記録結果をstate_recordにpush
         self.state_record[self.simulator.step_count] = copy.deepcopy(self.state)
@@ -172,8 +183,8 @@ class Vehicle :
         # このときのsimulatorの時刻はt+1であることに注意
         state      = self.state_record[self.simulator.step_count - 1]
         next_state = self.state_record[self.simulator.step_count]
-        action = self.action
-        reward = self.simulator.calculate_reward(state, next_state)
+        action = self.action if self.decide_action_way == "DQN" else None
+        reward = self.simulator.calculate_reward(self, state, next_state) if self.decide_action_way == "DQN" else None
 
         if self.decide_action_way == "DQN" : 
             self.simulator.dqn.push_experience(state, action, next_state, reward, self.is_goal)
@@ -221,15 +232,18 @@ class Vehicle :
 
     def make_log(self, state : dict[str, any], reward) -> dict[str, any] : 
         return {
-            "reward" : round(reward, 2), 
+            "reward" : round(reward, 2) if self.decide_action_way == "DQN" else None, 
             "velocity" : round(state["velocity"], 2), 
             "accel" : round(self.state["accel"], 2), 
             "jerk" : round(self.jerk, 2), 
-            "exist_front_vehicle" : round(self.state["exist_front_vehicle"], 2), 
-            "front_vehicle_velocity" : round(self.state["front_vehicle_velocity"], 2),
-            "front_vehicle_accel" : round(self.state["front_vehicle_accel"], 2),
-            "front_vehicle_distance" : round(self.state["front_vehicle_distance"], 2),
+            "proper_front_vehicle_distance" : round(self.state["proper_front_vehicle_distance"], 2) if self.state["exist_front_vehicle"] else None, 
+            "exist_front_vehicle" : self.state["exist_front_vehicle"], 
+            "front_vehicle_velocity" : round(self.state["front_vehicle_velocity"], 2) if self.state["exist_front_vehicle"] else None,
+            "front_vehicle_accel" : round(self.state["front_vehicle_accel"], 2) if self.state["exist_front_vehicle"] else None,
+            "front_vehicle_distance" : round(self.state["front_vehicle_distance"], 2) if self.state["exist_front_vehicle"] else None,
             "distance_intersection" : round(self.get_distance_next_intersection(), 2), 
+            "is_goal" : self.is_goal, 
+            "is_collision" : self.state["is_collision"], 
             "ignore_signal" : self.state["ignore_signal"], 
             "BLUE" : self.state["BLUE"], 
             "YELLOW_TO_RED" : self.state["YELLOW_TO_RED"], 

@@ -118,7 +118,7 @@ class Simulator :
         for vehicle in self.vehicle_dict.values() : 
             # vehicleが発生したターンはstateが存在しないのでtry-catchする
             try : 
-                if vehicle.state["front_vehicle_distance"] < 0 : 
+                if vehicle.state["front_vehicle_distance"] < vehicle.length : 
                     collision = True
             except : 
                 pass
@@ -184,16 +184,27 @@ class Simulator :
         return self.limit_velocity * distance_intersection / BASIC_DISTANCE
 
 
-    def calculate_reward(self, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
-        reward = 0 
+    def calculate_reward(self, vehicle : Vehicle, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
+        reward = 0
+        
+        # 衝突
+        reward -= state_t1["is_collision"] * 1000
+        
+        if vehicle.is_goal : 
+            return reward
 
         # 速度ボーナス
         # reward += state_t1["velocity"] ** self.delta_t
         
         # 速度制限
-        # reward -= state_t1["over_velocity"] * ((state_t1["velocity"] - self.limit_velocity) ** 2)
+        reward -= (state_t1["over_velocity"] * ((state_t1["velocity"] - self.limit_velocity) ** 2)) / 10
+
+        # 車間距離
+        if state_t1["exist_front_vehicle"] : 
+            reward -= min(((state_t1["proper_front_vehicle_distance"] - state_t1["front_vehicle_distance"]) ** 2) / 50, 100)
 
         # 速度制御
+        """
         distance_intersection = state_t1["distance_intersection"]
         minimum_velocity = self.calculate_minimum_velocity(distance_intersection)
         velocity = state_t1["velocity"]
@@ -211,12 +222,10 @@ class Simulator :
         # 停止
         if state_t1["is_stop"] and state_t1["aspect"] in [Aspect.BLUE] : 
             reward -= 100
-
-        # 衝突
-        reward -= state_t1["is_collision"] * 100
+        """
 
         # ターン毎の減点
-        reward -= 0.5
+        # reward -= 0.5
 
         return reward
     

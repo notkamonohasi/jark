@@ -40,7 +40,7 @@ class DQN :
 
 
     def optimize(self) : 
-        if self.batch_size >= len(self.memory) : 
+        if self.batch_size * 10 >= len(self.memory) : 
             return 
          
         transitions = self.memory.sample(self.batch_size)

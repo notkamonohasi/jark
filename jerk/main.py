@@ -30,7 +30,7 @@ if __name__ == "__main__" :
         "jerk_cand" : [-1, 0, 1],
         "batch_size" : 128,
         "gamma" : 0.995, 
-        "max_episode" : 30, 
+        "max_episode" : 5000, 
         "log_interval" : 10, 
         "limit_velocity" : 15, 
         "limit_accel" : 1, 

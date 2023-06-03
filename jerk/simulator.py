@@ -1,5 +1,6 @@
 
 from typing import Union
+import math
 
 from logger import EpisodeLogger, TotalLogger
 from vehicle import Vehicle
@@ -208,6 +209,36 @@ class Simulator :
 
 
     def calculate_reward(self, vehicle : Vehicle, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
+        if vehicle.is_goal or vehicle.decide_action_way == "IDM" : 
+            return 0
+        
+        reward = 0
+        EPSILON = 0.00001
+
+        # TTC
+        relative_velocity = state_t1["front_vehicle_velocity"] - state_t1["velocity"]
+        if abs(relative_velocity) > EPSILON : 
+            TTC = state_t1["front_vehicle_distance"] / relative_velocity
+        else : 
+            TTC = state_t1["front_vehicle_distance"] / EPSILON
+        if 0 <= TTC and TTC <= 4 : 
+            reward -= math.log(TTC / 4)
+
+        # efficiency
+        if state_t1["velocity"] >= EPSILON : 
+            headway = state_t1["front_vehicle_distance"] / state_t1["velocity"]
+        else : 
+            headway = state_t1["front_vehicle_distance"] / EPSILON
+        reward += self.log_normal_distribution(headway, 0.4226, 0.4365)
+
+        # comfort
+        # 一度無視
+    
+
+        return reward
+
+    
+    def _calculate_reward(self, vehicle : Vehicle, state_t0 : dict[str, any], state_t1 : dict[str, any]) -> float : 
         reward = 0
         
         # 衝突
@@ -253,5 +284,9 @@ class Simulator :
 
         return reward
     
- 
+
+    def log_normal_distribution(self, x, mu, sigma):
+        sigma_2 = sigma ** 2
+        r = math.log(x) - mu
+        return (1.0 / (x * math.sqrt(2.0 * math.pi * sigma_2))) * math.exp(-0.5 * (r * r) / sigma_2)
 

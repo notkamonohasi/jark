@@ -1,27 +1,45 @@
-
 import os, random
+from pathlib import Path
+import shutil
 
+from logger import TotalLogger
 from simulator import Simulator 
 from DQN.DQN import DQN
+from const import ROOT_DIR
+
+RESULT_DIR = ROOT_DIR.joinpath("result")
+EPISODE_DIR = RESULT_DIR.joinpath("episode")
+MODEL_DIR = RESULT_DIR.joinpath("model")
+SIM_DIR = RESULT_DIR.joinpath("sim")
 
 if __name__ == "__main__" : 
+    if RESULT_DIR.exists() : 
+        shutil.rmtree(RESULT_DIR)
+    RESULT_DIR.mkdir()
+    EPISODE_DIR.mkdir()
+    MODEL_DIR.mkdir()
+    SIM_DIR.mkdir()
+
     init_data = {
         "delta_t" : 0.2, 
-        "result_path" : "./result", 
-        "state_columns" : ["accel", "velocity", "front_vehicle_distance", "proper_front_vehicle_distance"], 
+        "state_columns" : ["accel", "velocity", "front_vehicle_distance", "proper_front_vehicle_distance"],
+        "result_path" : RESULT_DIR,  
         "learning_rate" : 0.0001, 
         "target_learning_rate" : 0.005, 
         "buffer_size" : 10000, 
         "jerk_cand" : [-1, 0, 1],
         "batch_size" : 128,
         "gamma" : 0.995, 
-        "max_episode" : 50000, 
+        "max_episode" : 30, 
         "log_interval" : 10, 
         "limit_velocity" : 15, 
         "limit_accel" : 1, 
         "limit_brake" : -3, 
         "limit_step_count" : 500
     }
+
+    # totalLoggerを初期化
+    total_logger = TotalLogger(SIM_DIR)
 
     # dqnを初期化
     dqn = DQN({
@@ -32,10 +50,9 @@ if __name__ == "__main__" :
         "jerk_cand" : init_data["jerk_cand"], 
         "batch_size" : init_data["batch_size"], 
         "gamma" : init_data["gamma"], 
-        "max_episode" : init_data["max_episode"]
+        "max_episode" : init_data["max_episode"], 
+        "model_path" : MODEL_DIR
     })
-
-    os.system("rm -rf ./result")
 
     for pos_episode in range(1, init_data["max_episode"] + 1) : 
         print()
@@ -95,7 +112,10 @@ if __name__ == "__main__" :
         init_data["vehicle_init_data_list"] = vehicle_init_data_list
 
         init_data["pos_episode"] = pos_episode
-        init_data["result_path"] = "./result/episode_" + str(pos_episode).zfill(4)
+        init_data["episode_path"] = EPISODE_DIR.joinpath("episode_" + str(pos_episode).zfill(4))
         dqn.pos_episode = pos_episode
-        simulator = Simulator(init_data, dqn)
+        simulator = Simulator(init_data, total_logger, dqn)
         simulator.start()
+
+    total_logger.write_result()
+    dqn.write_result()

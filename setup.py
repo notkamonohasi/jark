@@ -18,5 +18,6 @@ setup(
         'openpyxl==3.0.10',
         'xlrd==2.0.1',
         'numpy==1.24.1',
+        'matplotlib'
     ],
 )

@@ -5,7 +5,9 @@ import torch.nn as nn
 import torch.optim as optim
 import pandas as pd 
 import numpy as np 
+import matplotlib.pyplot as plt
 from typing import Tuple
+from pathlib import Path
 
 from .network import DQN_Network
 from .memory import Memory
@@ -26,6 +28,7 @@ class DQN :
         self.state_columns = init_data["state_columns"]
         self.batch_size = init_data["batch_size"]
         self.gamma = init_data["gamma"]
+        self.model_path : Path = init_data["model_path"]
 
         self.memory = Memory({
             "buffer_size" : init_data["buffer_size"]
@@ -37,6 +40,8 @@ class DQN :
         self.optimizer = optim.Adam(self.network.parameters(), lr=init_data["learning_rate"], amsgrad=True)
 
         self.pos_episode = 1
+
+        self.loss_list = []
 
 
     def optimize(self) : 
@@ -61,6 +66,7 @@ class DQN :
 
         criterion = nn.MSELoss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+        self.loss_list.append(loss.item())
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -106,6 +112,7 @@ class DQN :
             tensor([reward], device=device)
         )
 
+
     def get_eval_state(self) -> None : 
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))
@@ -123,7 +130,33 @@ class DQN :
             next_state_values[non_final_mask] = self.target_network.forward(non_final_next_states).max(1)[0]
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
+    
+    def write_result(self) -> None : 
+        # DQNを保存
+        torch.save(self.network, self.model_path.joinpath("model_weight.pth"))
 
+        # lossのグラフを描画
+        normalized_loss_list = self.get_normalize_list(self.loss_list)
+        time_list = [i for i in range(len(normalized_loss_list))]
+        plt.plot(time_list, normalized_loss_list)
+        plt.xlabel("opt times", fontsize = 14)
+        plt.ylabel("loss", fontsize = 14)
+        plt.xticks(fontsize = 12)
+        plt.yticks(fontsize = 12)
+        plt.yscale("log")
+        plt.grid()
+        plt.savefig(self.model_path.joinpath("loss.png"), bbox_inches="tight")
+        plt.clf()
+
+    
+    # 移動平均を計算
+    def get_normalize_list(self, target_list : list[float], size = 1000) -> list[float] : 
+        ret = []
+        pos_sum = sum(target_list[: size])
+        for i in range(len(target_list) - size) : 
+            pos_sum = pos_sum - target_list[i] + target_list[i + size]
+            ret.append(pos_sum / size)
+        return ret
     
 
 

@@ -188,9 +188,10 @@ class Vehicle :
 
         if self.decide_action_way == "DQN" : 
             self.simulator.dqn.push_experience(state, action, next_state, reward, self.is_goal)
+            self.simulator.total_logger.register_reward(self.simulator.pos_episode, reward)
 
         # 経験をloggerに登録
-        self.simulator.logger.register_vehicle_log(self.number, self.make_log(state, reward))
+        self.simulator.episode_logger.register_vehicle_log(self.number, self.make_log(state, reward))
 
 
     # 次の交差点までの距離を取得する

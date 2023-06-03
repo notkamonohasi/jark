@@ -1,7 +1,7 @@
 
 from typing import Union
 
-from logger import Logger
+from logger import EpisodeLogger, TotalLogger
 from vehicle import Vehicle
 from signals import Signal, Aspect
 from intersection import Intersection
@@ -14,16 +14,17 @@ BASIC_DISTANCE = 150
 
 
 class Simulator : 
-    def __init__(self, init_data : dict[str, any], dqn : DQN) : 
+    def __init__(self, init_data : dict[str, any], total_logger : TotalLogger, dqn : DQN) : 
         self.delta_t = init_data["delta_t"]
+        self.pos_episode = init_data["pos_episode"]
         self.step_count = 0 
         
         self.simulation_end_flag = False
 
         # loggerを初期化
-        self.logger = Logger({
+        self.episode_logger = EpisodeLogger({
             "log_interval" : init_data["log_interval"], 
-            "result_path" : init_data["result_path"], 
+            "episode_path" : init_data["episode_path"], 
             "pos_episode" : init_data["pos_episode"]
         })
 
@@ -59,14 +60,14 @@ class Simulator :
         self.limit_brake = init_data["limit_brake"]
         self.limit_step_count = init_data["limit_step_count"]
 
-        # dqn
+        self.total_logger = total_logger
         self.dqn = dqn
 
 
     def start(self) -> None : 
         while self.simulation_end_flag == False : 
             self.increment() 
-        self.logger.write_log()
+        self.episode_logger.write_log()
 
 
     def increment(self) -> None : 

@@ -222,7 +222,7 @@ class Simulator :
         else : 
             TTC = state_t1["front_vehicle_distance"] / EPSILON
         if 0 <= TTC and TTC <= 4 : 
-            reward += math.log(TTC / 4)   # 右辺は正
+            reward += 10 * math.log(TTC / 4)   # 右辺は正
 
         # efficiency
         if state_t1["velocity"] >= EPSILON : 

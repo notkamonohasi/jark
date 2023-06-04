@@ -22,7 +22,7 @@ if __name__ == "__main__" :
 
     init_data = {
         "delta_t" : 0.1, 
-        "state_columns" : ["accel", "velocity", "distance_intersection", "front_vehicle_distance", "proper_front_vehicle_distance"],
+        "state_columns" : ["accel", "velocity", "distance_intersection", "front_vehicle_velocity", "front_vehicle_distance"],
         "result_path" : RESULT_DIR,  
         "learning_rate" : 0.0001, 
         "target_learning_rate" : 0.005, 

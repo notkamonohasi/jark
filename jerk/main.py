@@ -117,5 +117,6 @@ if __name__ == "__main__" :
         simulator = Simulator(init_data, total_logger, dqn)
         simulator.start()
 
-    total_logger.write_result()
-    dqn.write_result()
+        if pos_episode % 1000 == 0 : 
+            total_logger.write_result()
+            dqn.write_result()

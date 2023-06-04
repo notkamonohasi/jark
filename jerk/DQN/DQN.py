@@ -64,15 +64,13 @@ class DQN :
             next_state_values[non_final_mask] = self.target_network.forward(non_final_next_states).max(1)[0]
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
-        criterion = nn.MSELoss()
+        criterion = nn.SmoothL1Loss()   # Huber損失、大きな誤差に対して鈍感
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.loss_list.append(loss.item())
 
-        # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        # In-place gradient clipping
-        # torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.network.parameters(), 100)   # clip 大きなパラメータ更新が起きるのを防ぐ
         self.optimizer.step()
 
         # targetを更新
@@ -92,7 +90,7 @@ class DQN :
     def calculate_epsilon(self) : 
         half_episode = self.max_episode // 2
         if self.pos_episode < half_episode : 
-            epsilon = (half_episode - self.pos_episode) / half_episode * 0.2 + 0.1 
+            epsilon = (half_episode - self.pos_episode) / half_episode * 0.4 + 0.1 
         else : 
             epsilon = (self.max_episode - self.pos_episode) / half_episode * 0.1
         return epsilon
@@ -137,16 +135,17 @@ class DQN :
 
         # lossのグラフを描画
         normalized_loss_list = self.get_normalize_list(self.loss_list)
-        time_list = [i for i in range(len(normalized_loss_list))]
-        plt.plot(time_list, normalized_loss_list)
-        plt.xlabel("opt times", fontsize = 14)
-        plt.ylabel("loss", fontsize = 14)
-        plt.xticks(fontsize = 12)
-        plt.yticks(fontsize = 12)
-        plt.yscale("log")
-        plt.grid()
-        plt.savefig(self.model_path.joinpath("loss.png"), bbox_inches="tight")
-        plt.clf()
+        if len(normalized_loss_list) >= 2 : 
+            time_list = [i for i in range(len(normalized_loss_list))]
+            plt.plot(time_list, normalized_loss_list)
+            plt.xlabel("opt times", fontsize = 14)
+            plt.ylabel("loss", fontsize = 14)
+            plt.xticks(fontsize = 12)
+            plt.yticks(fontsize = 12)
+            plt.yscale("log")
+            plt.grid()
+            plt.savefig(self.model_path.joinpath("loss.png"), bbox_inches="tight")
+            plt.clf()
 
     
     # 移動平均を計算

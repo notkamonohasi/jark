@@ -21,8 +21,8 @@ if __name__ == "__main__" :
     SIM_DIR.mkdir()
 
     init_data = {
-        "delta_t" : 0.2, 
-        "state_columns" : ["accel", "velocity", "front_vehicle_distance", "proper_front_vehicle_distance"],
+        "delta_t" : 0.1, 
+        "state_columns" : ["accel", "velocity", "distance_intersection", "front_vehicle_distance", "proper_front_vehicle_distance"],
         "result_path" : RESULT_DIR,  
         "learning_rate" : 0.0001, 
         "target_learning_rate" : 0.005, 
@@ -117,6 +117,6 @@ if __name__ == "__main__" :
         simulator = Simulator(init_data, total_logger, dqn)
         simulator.start()
 
-        if pos_episode % 1000 == 0 : 
+        if pos_episode % 10 == 0 : 
             total_logger.write_result()
             dqn.write_result()

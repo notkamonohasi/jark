@@ -92,9 +92,6 @@ class Simulator :
         for lane in self.lane_dict.values() : 
             lane.update(self.vehicle_dict)
 
-        # シミュレーションを終了するかの判断
-        self.judge_simulation_end()
-
         # ステップ数を更新
         # 以降の処理では時刻がずれていることに注意する
         self.step_count += 1
@@ -102,6 +99,9 @@ class Simulator :
         # 各vehicleが時刻t+1の状況を認識
         for vehicle in self.vehicle_dict.values() : 
             vehicle.recognize() 
+
+        # シミュレーションを終了するかの判断
+        self.judge_simulation_end()
 
         # 各vehicleが経験を格納
         for vehicle in self.vehicle_dict.values() : 
@@ -137,7 +137,7 @@ class Simulator :
         for vehicle in self.vehicle_dict.values() : 
             # vehicleが発生したターンはstateが存在しないのでtry-catchする
             try : 
-                if vehicle.state["front_vehicle_distance"] < vehicle.length : 
+                if vehicle.state["front_vehicle_distance"] < 0 : 
                     collision = True
                     reason = "collision"
             except : 
@@ -195,10 +195,10 @@ class Simulator :
         else : 
             # front_vehicle_distanceを車長分修正
             # これにより、距離が負になる（＝衝突する）こともある
-            front_vehicle_distance -= self.vehicle_dict[vehicle.number].length / 2 - \
+            front_vehicle_distance -= self.vehicle_dict[vehicle.number].length / 2 + \
                                       self.vehicle_dict[front_vehicle_number].length / 2
             return {
-                "distance" : front_vehicle_distance, 
+                "distance" : front_vehicle_distance,   # この値は車長を引いていることに注意
                 "velocity" : self.vehicle_dict[front_vehicle_number].velocity, 
                 "accel" : self.vehicle_dict[front_vehicle_number].accel
             }
@@ -216,20 +216,23 @@ class Simulator :
         EPSILON = 0.00001
 
         # TTC
-        relative_velocity = state_t1["front_vehicle_velocity"] - state_t1["velocity"]
+        relative_velocity = state_t1["velocity"] - state_t1["front_vehicle_velocity"]
         if abs(relative_velocity) > EPSILON : 
             TTC = state_t1["front_vehicle_distance"] / relative_velocity
         else : 
             TTC = state_t1["front_vehicle_distance"] / EPSILON
         if 0 <= TTC and TTC <= 4 : 
-            reward -= math.log(TTC / 4)
+            reward += math.log(TTC / 4)   # 右辺は正
 
         # efficiency
         if state_t1["velocity"] >= EPSILON : 
             headway = state_t1["front_vehicle_distance"] / state_t1["velocity"]
         else : 
             headway = state_t1["front_vehicle_distance"] / EPSILON
-        reward += self.log_normal_distribution(headway, 0.4226, 0.4365)
+        # reward += self.log_normal_distribution(headway, 0.4226, 0.4365)
+        reward -= ((headway - 1.26) ** 2) / 10
+
+        reward = max(-1000, reward)   # 停止されると壊れるため
 
         # comfort
         # 一度無視

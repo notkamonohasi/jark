@@ -19,3 +19,4 @@ def calculate_euclidean_distance(a : tuple[int, int], b : tuple[int, int]) -> in
         return abs(a[1] - b[1])
     else : 
         return abs(a[0] - b[0])
+    

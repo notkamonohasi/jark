@@ -80,7 +80,7 @@ class Vehicle :
             self.state["front_vehicle_distance"] = front_vehicle_info["distance"]
             self.state["front_vehicle_velocity"] = front_vehicle_info["velocity"]
             self.state["front_vehicle_accel"] = front_vehicle_info["accel"]
-            self.state["is_collision"] = (front_vehicle_info["distance"] < self.length)
+            self.state["is_collision"] = (front_vehicle_info["distance"] < 0)
             self.state["proper_front_vehicle_distance"] = get_proper_front_vehicle_distance(self)
 
         # 信号情報

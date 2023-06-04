@@ -27,7 +27,7 @@ def get_jerk_by_IDM(vehicle : Vehicle) -> float :
 
 
 def get_proper_front_vehicle_distance(vehicle : Vehicle) -> float : 
-    return 4.4 + 1.38 + vehicle.state["velocity"] * 2.0
+    return vehicle.state["velocity"] * 1.26
     """
     v0 = vehicle.limit_velocity   # 希望速度
     v = vehicle.state["velocity"]
